@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block head %}
+<script>
+
+var tid = "{{ tid }}";
+function askstate(tid)
+{$.getJSON('/api/status/'+tid).done(function (data) {
+    if(data.state>0){
+        location.reload(true);
+    }
+    else if (data.state == 0){
+        window.location.href = "/";
+    }
+    else{
+        setTimeout(askstate(tid),1000)
+    }
+});}
+$(window).on('load', function() {
+    console.log("run function after loading");
+ askstate(tid);
+});
+</script>
+{% endblock %}
+{% block content %}
+<div class="paper-box"><h3>We are trying to get the paper now!</h3></div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="paper-box">
+    <p class="id"> &nbsp arXiv:<a href="{{ p.arxivurl }}"> {{ p.arxivid }}</a>
+        &nbsp [<a href="{{ p.pdfurl }}">pdf</a>] </p>
+    <h2 class="title"> {{ p.title }}</h2>
+
+    <p class="authors">
+        {% for a in p.authors %}
+
+        <a href="{{ 'https://arxiv.org/search/?query=%22'+a.author+'%22&searchtype=author&abstracts=show&order=-announced_date_first&size=50'  }}">
+            {{ a.author }}{{ "," if not loop.last }} &nbsp </a>
+
+        {% endfor %}
+    </p>
+
+    <hr>
+
+    <p class="summary">{{ p.summary }}</p>
+
+    <p class="subjects">
+        Subjects:
+        <span class="main-subjects"> <a
+                href="{{ p.mainsubject|get_subject_url }}">{{ p.mainsubject|recover_subject }}</a></span>
+        {% for s in p.subjects %},&nbsp
+        <span class="other-subjects"> <a href="{{ s.subject|get_subject_url }}">{{ s.subject|recover_subject }}</a></span>
+        {% endfor %}
+    </p>
+    <p class="announce_date">
+        Published on {{ p.announce.strftime("%Y %b %d") }}
+    </p>
+</div>
+{% endblock %}

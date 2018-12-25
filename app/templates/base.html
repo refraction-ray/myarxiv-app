@@ -1,0 +1,50 @@
+<!doctype html>
+<title>{% block title %}{% endblock %} Arxiv Bay</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if config['ENV']=="development" %}
+{% include "external-dev.html" %}
+{% else %}
+{% include "external.html" %}
+{% endif %}
+{% block head %}{% endblock %}
+<nav class="uk-navbar-container" style="height:50px" uk-navbar>
+    <div class="uk-navbar-left">
+        <ul class="uk-navbar-nav">
+            <li class="uk-margin-left"><a href="/">Homepage</a></li>
+        </ul>
+    </div>
+    <div class="uk-navbar-right">
+        <ul class="uk-navbar-nav">
+            {% if current_user.is_authenticated %}
+                <li class="uk-margin-right"><a href="#">{{ current_user.name }}</a>
+                    <div class="uk-navbar-dropdown">
+                        <ul class="uk-nav uk-navbar-dropdown-nav">
+                            <li><a href="/favorites">My Favorites</a></li>
+                            <li><a href="/settings/keywords">Edit Keywords</a></li>
+                            <li><a href="/settings/userinfo">Edit Profiles</a></li>
+                            <hr>
+                            <li><a href="/api/logout">Log Out</a>
+                        </ul>
+                    </div>
+
+                    {% else %}
+
+                <li class="uk-margin-right"><a class="uk-logo" href="/login">Log In</a>
+                <div class="uk-navbar-dropdown">
+                    <ul class="uk-nav uk-navbar-dropdown-nav">
+                        <li><a href="/register">Sign Up</a></li>
+
+                    </ul>
+                </div>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<header>
+    {% block header %}{% endblock %}
+</header>
+
+{% block content %}{% endblock %}
+

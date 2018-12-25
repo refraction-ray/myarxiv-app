@@ -1,0 +1,163 @@
+{% extends  'base.html' %}
+{% block head %}
+<script>
+    $(function () {
+        var form = new Vue({
+                el: "#kwform",
+                delimiters: ["<%", "%>"],
+                data: {
+                    seen: false,
+                    message: "",
+                    issuccess: false,
+                    items: [],
+                    fields: []
+                },
+                methods: {
+                    hide: function (event) {
+
+                        event.preventDefault();
+                        this.seen = false;
+                    },
+
+                    addline: function (event) {
+
+                        event.preventDefault();
+                        this.items.push({keyword: "", weight: 1});
+                    },
+
+                    deleteline: function (item, event) {
+                        event.preventDefault();
+                        var index = this.items.indexOf(item);
+                        if (index > -1) {
+                            this.items.splice(index, 1);
+                        }
+                    },
+
+                    fetch: function (event) {
+                        var self = this;
+                        if (event) {
+
+                            event.preventDefault();
+                        }
+                        $.getJSON("/api/keywords").done(
+                            function (data) {
+
+                                self.items = data.results;
+                                self.items.push({keyword: "", weight: 1});
+                                if (event) {
+                                    self.message = "The keywords are successfully reset to the last time";
+                                    self.seen = true;
+                                }
+                            });
+                        //    get field info
+                        $.getJSON("/api/fields").done(function (data) {
+                            var i = 0;
+                            for (let key in field) {
+                                var newitem = {abbr: key, full: field[key], checked: data[key]}
+                                Vue.set(self.fields, i, newitem);
+                                i++;
+                            }
+                        });
+
+
+                    },
+
+                    submit: function (event) {
+                        var self = this;
+                        event.preventDefault();
+                        $.ajax({
+                            url: "/api/keywords",
+                            data: JSON.stringify({ctoken: "{{ token }}", items: this.items}),
+                            type: "POST",
+                            contentType: "application/json"
+                        }).done(function (data) {
+                            self.message = data.message;
+                            $.ajax({
+                                url: "/api/fields",
+                                data: JSON.stringify({ctoken: "{{ token }}", fields: self.fields}),
+                                type: "POST",
+                                contentType: "application/json"
+                            }).done(function (data) {
+                                self.message = data.message;
+                                self.seen = true;
+                                self.issuccess = true;
+                            }).fail(function (err) {
+                                self.message = err.responseJSON.message;
+                                self.seen = true;
+                                self.issuccess = false;
+                            });
+                        }).fail(function (err) {
+                            self.message = err.responseJSON.message;
+                            self.seen = true;
+                            self.issuccess = false;
+                        });
+
+                    }
+
+                },
+
+                created: function () {
+                    this.fetch(false)
+                }
+            }
+        );
+
+    })
+</script>
+{% endblock %}
+{% block content %}
+<div id="kwform" class="paper-box">
+    <flash v-bind.sync="$data"></flash>
+
+    <form class="uk-margin-top">
+        <p class="uk-text-bold">Interest Fields</p>
+        <div class="uk-margin uk-grid-small  uk-grid">
+
+            <label class="uk-margin-auto uk-width-1-2@s" v-for="f in fields"><input class="uk-checkbox" type="checkbox"
+                                                                                    v-model="f.checked"> <% f.full %>
+            </label>
+
+        </div>
+
+    </form>
+    <hr>
+    <form class="uk-grid-small uk-form-stacked uk-margin-bottom uk-margin-top" uk-grid>
+
+        <div class="uk-width-1-2@s">
+            <label class="uk-form-label uk-text-bold" for="form-stacked-text">Keywords</label>
+            <!--<input class="uk-input" type="text" placeholder="Add new keywords here" >-->
+        </div>
+        <div class="uk-width-1-3@s">
+            <label class="uk-form-label uk-text-bold" for="form-stacked-text">Weights</label>
+            <!--<input class="uk-input" type="text" placeholder="1" >-->
+        </div>
+
+        <template v-for="item in items">
+            <div class="uk-width-1-2@s">
+                <input class="uk-input" type="text" placeholder="" v-model="item.keyword">
+            </div>
+            <div class="uk-width-1-4@s">
+                <input class="uk-input" type="text" placeholder="1" v-model="item.weight">
+            </div>
+            <div class="uk-width-1-4@s"><a uk-icon="close" href="" v-on:click="deleteline(item,$event)"></a>
+            </div>
+        </template>
+
+    </form>
+
+    <div uk-grid>
+        <div class="uk-width-1-3@s">
+            <button class="uk-button-primary uk-button-large" v-on:click="submit">Submit</button>
+        </div>
+        <div class="uk-width-1-3@s">
+            <button class="uk-button-default uk-button-large" v-on:click="fetch">Reset</button>
+        </div>
+        <div class="uk-width-1-3@s">
+            <button class="uk-button-danger uk-button-large" v-on:click="addline">
+                Add line
+            </button>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

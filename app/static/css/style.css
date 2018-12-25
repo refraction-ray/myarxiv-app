@@ -1,0 +1,56 @@
+
+div.paper-box{
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.small-box{
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+p.id {
+    font-size: 20px;
+    color: #b30000;
+    background: #f8f8f8;
+    border:#999999 solid 2px;
+    padding: 2px;
+    border-radius: 18px;
+    font-weight: bold;
+
+}
+
+a{
+    text-decoration: none;
+    color: rgba(66, 10, 255, 0.85)
+}
+
+a:visited{
+    text-decoration: none;
+    color: rgba(0, 14, 146, 0.99)
+}
+
+h2.title{
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 120%;
+}
+
+p.summary{
+    font-size: 18px;
+    line-height: 120%;
+}
+
+span.main-subjects{
+    font-weight: bold;
+}
+
+p.subjects{
+    font-size: 18px;
+}
+
+p.announce_date{
+    font-style: italic;
+}

@@ -1,0 +1,13 @@
+WTForms==2.2.1
+fuzzywuzzy==0.17.0
+Flask==1.0.2
+celery==4.2.1
+requests==2.20.1
+SQLAlchemy==1.2.10
+Werkzeug==0.14.1
+Flask_SQLAlchemy==2.3.2
+Flask_Login==0.4.1
+feedparser==5.2.1
+itsdangerous==1.1.0
+beautifulsoup4==4.6.3
+PyYAML==3.13

@@ -1,0 +1,170 @@
+from flask import Blueprint, request, redirect, url_for, current_app, abort, jsonify
+from ..models import db, User, Keyword, UserInfo, Interest
+from ..exceptions import *
+from ..forms import RegistrationForm, LoginForm, UserInfoForm, EmailForm
+from datetime import datetime
+from flask_login import login_required, login_user, current_user, logout_user
+from ..cache import cache
+from ..utils import get_gravatar_url
+from ..tasks import verify_task, reset_password_task
+from ..security import token_checked
+from ..analysisbackend.cons import field
+
+user = Blueprint('user', __name__)
+
+
+@user.route("/api/registration", methods=["POST"])
+def api_registration():
+    current_app.logger.info("get request for registration %s" % request.form)
+    form = RegistrationForm(request.form)
+    if not form.validate():
+        raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
+    if User.query.filter_by(email=form.email.data).first() is not None:
+        raise InvalidInput(message="The email address has already been used.")
+    if User.query.filter_by(name=form.name.data).first() is not None:
+        raise InvalidInput(message="The username has already been used.")
+    u = User(name=form.name.data, email=form.email.data, password=form.password.data, created_at=datetime.now())
+    u.hashpass(current_app.config['PASSWORD_SALT'])
+    db.session.add(u)
+    db.session.commit()
+    return jsonify({'message': 'the user is successfully created',
+                    'state': 'success'})
+
+
+@user.route("/api/login", methods=["POST"])
+def api_login():
+    current_app.logger.info("get request for login %s" % request.form)
+    form = LoginForm(request.form)
+    current_app.logger.info("email %s, password %s" % (form.email.data, form.password.data))
+    u = User.query.filter_by(email=form.email.data).first()
+    if not form.validate():
+        raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
+    if not u:
+        raise InvalidInput(message="The password or email is in correct")
+
+    if u.checkpass(form.password.data, current_app.config['PASSWORD_SALT']):
+        current_app.logger.info("successfully login!")
+        login_user(u)
+        return jsonify({'message': "successfully login",
+                        'state': 'success'})
+
+    raise InvalidInput(message="The password or email is in correct")
+
+
+@user.route("/api/logout")
+@login_required
+def api_logout():
+    logout_user()
+    return redirect("/login")
+
+
+@user.route("/api/keywords", methods=["GET", "POST"])
+@login_required
+@token_checked
+def api_keywords():
+    if request.method == "GET":
+        ks = Keyword.query.filter_by(uid=current_user.id).all()
+        ks = [{"keyword": k.keyword, "weight": k.weight} for k in ks]
+        return jsonify({"results": ks})
+    else:
+        js = request.json['items']
+        u = User.query.filter_by(id=current_user.id).first()
+        u.keywords = [Keyword(keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+        db.session.commit()
+        # try delete relevant cache as much as possible
+        cache.delete("api_today_" + str(current_user.id) + datetime.today().strftime("%Y%m%d"))
+        return jsonify({"message": "the keywords are successfully updated",
+                        'state': 'success'})
+
+
+@user.route("/api/fields", methods=["GET", "POST"])
+@login_required
+@token_checked
+def api_fields():
+    if request.method == "GET":
+        fs = Interest.query.filter_by(uid=current_user.id).all()
+        fs_set = {f.interest for f in fs}
+        field_dict = {f: f in fs_set for f in field}
+        return jsonify(field_dict)
+    ## post part
+    js = request.json['fields']
+    u = User.query.filter_by(id=current_user.id).first()
+    u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
+    db.session.commit()
+    return jsonify({"message": "the interest fields are successfully updated",
+                    'state': 'success'})
+
+
+@user.route("/api/userinfo", methods=["GET", "POST"])
+@login_required
+@token_checked
+def api_userinfo():
+    if request.method == "GET":
+        ui = UserInfo.query.filter_by(uid=current_user.id).first()
+        u = User.query.filter_by(id=current_user.id).first()
+        if not ui:
+            ui = UserInfo(uid=current_user.id, img=get_gravatar_url(u.email))
+            db.session.add(ui)
+            db.session.commit()
+        res = u.dict()
+        res.update(ui.dict())
+        return jsonify(res)
+
+    ## method post
+    ui = UserInfo.query.filter_by(uid=current_user.id).first()
+    form = UserInfoForm(request.form)
+    if not form.validate():
+        raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
+    ui.img = form.imgurl.data
+    ui.profile = form.profile.data
+    ui.noti1 = form.dailymail.data
+    db.session.commit()
+    return jsonify({"state": "success",
+                    "message": "the user info is successfully updated"})
+
+
+@user.route("/api/verify") # better implement in post
+@login_required
+def api_verify():
+    u = User.query.filter_by(id=current_user.id).first()
+    task = verify_task.delay(u.email, u.name)
+    current_app.logger.info("Sending verification email for %s" % u.name)
+    return jsonify({"state": "sending",
+                    "message": "An verification mail is sent to you, please click the link inside to verify"})
+
+
+@user.route("/api/password/reset", methods=["POST"])
+def api_password_reset():
+    form = EmailForm(request.form)
+    if not form.validate():
+        raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
+    u = User.query.filter_by(email=form.email.data).first()
+    if not u:
+        raise InvalidInput(message="No user use this email address")
+    ui = UserInfo.query.filter_by(uid=u.id).first()
+    if (not ui) or (not getattr(ui, "verified", False)):
+        raise InvalidInput(message="The email isn't verified, so you cannot reset the password")
+    task = reset_password_task.delay(u.email, u.name)
+    current_app.logger.info("Sending reset email for %s" % u.name)
+    return jsonify({"state": "sending",
+                    "message": "A reset mail is sent to you, please click the link inside to reset the password"})
+
+
+@user.route("/api/password/edit", methods=["POST"])
+@login_required
+@token_checked
+def api_password_edit():
+    current_app.logger.info(request.form)
+    password = request.form.get("password")
+    email = request.form.get("email")
+    u = User.query.filter_by(email=email).first()
+    if not u:
+        raise InvalidInput(message="Don't try to do something weird")
+    ui = UserInfo.query.filter_by(uid=u.id).first()
+    if (not ui) or (not getattr(ui, "verified", False)):
+        raise InvalidInput(message="Don't try to do something weird")
+    u.password = password
+    u.hashpass(current_app.config['PASSWORD_SALT'])
+    db.session.commit()
+    return jsonify({"message": "the password is successfully changed",
+                    'state': 'success'})

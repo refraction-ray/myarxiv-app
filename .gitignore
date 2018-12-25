@@ -1,0 +1,13 @@
+.idea/
+.DS_Store
+Deploy/
+alembic/
+alembic.ini
+celerybeat-schedule
+*.pyc
+__pycache__/
+app/config_override.yaml
+app/static/css/uikit*
+app/static/js/jquery*
+app/static/js/uikit*
+app/static/js/vue*

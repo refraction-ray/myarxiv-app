@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block head %}
+<script>
+    $(function () {
+            var warn = new Vue({
+                el: "#warning",
+                data: {
+                    seen: false,
+                    message: "",
+                    issuccess: false
+                },
+                methods: {
+                    hide: function (event) {
+
+                        event.preventDefault();
+                        this.seen = false;
+                    }
+
+                }
+            });
+
+
+            var app = new Vue({
+                el: '#reg',
+                data: {
+                    "email": "",
+                    "name": "",
+                    "password": "",
+                    "register": {% if register %}true{% else %}false{% endif %}
+        },
+            methods: {
+                submit:  function (event) {
+                    event.preventDefault();
+                    console.log("send query by vue");
+                    var url = "/api/login";
+
+                    if (this.register) {
+
+                        url = "/api/registration"
+                    }
+                    var sub = $.post(url, {
+                        name: $.trim(this.name),
+                        email: this.email,
+                        password: CryptoJS.SHA1(this.email + ':' + this.password).toString()
+                    });
+                    sub.done(function (data) {
+
+                        if (app.register) {
+
+                            window.location.href = "/login";
+                        }
+                        else {
+
+                            location.reload(true);
+                        }
+
+                    });
+                    sub.fail(function (err) {
+                        console.log(err.responseJSON.message);
+                        warn.message = err.responseJSON.message;
+                        warn.issuccess = false;
+                        warn.seen = true;
+                    });
+                }
+            }
+        })
+
+
+
+        }
+    )
+</script>
+{% endblock %}
+{% block content %}
+
+
+<div class="small-box">
+    <div class="uk-text-danger uk-margin-bottom uk-margin-top">
+        {% if register %} Please register. <a href="/login"> (I already have an account.)
+        {% else %} Please Login <a href="/register"> (I am new here.){% endif %}</a>
+    </div>
+
+<flash id=warning v-bind.sync="$data"></flash>
+
+    <form class="uk-form-horizontal" id="reg" method="POST" action="/api/registration">
+        <div class="uk-margin">{{ form.email.label(class="uk-form-label") }}
+            <div class="uk-form-controls"> {{ form.email(**{"v-model":"email", "class":"uk-input "}) }}</div>
+        </div>
+        {% if register %}
+        <div class="uk-margin">{{ form.name.label(class="uk-form-label") }}
+            <div class="uk-form-controls">{{ form.name(**{"v-model":"name", "class":"uk-input "}) }}</div>
+        </div>
+        {% endif %}
+        <div class="uk-margin">{{ form.password.label(class="uk-form-label") }}
+            <div class="uk-form-controls uk-margin-bottom">{{ form.password(**{"v-model": "password",
+                "class":"uk-input","type":"password"}) }}
+            </div>
+            <a class="uk-margin-top" v-if="!register" href="/password/reset">Forget or change the password</a>
+        </div>
+
+        <button class="uk-button uk-button-primary" v-on:click="submit">Submit</button>
+    </form>
+
+</div>
+{% endblock %}

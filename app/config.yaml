@@ -1,0 +1,35 @@
+SQLALCHEMY_DATABASE_URI: mysql://root@localhost/appdb?charset=utf8mb4
+SQLALCHEMY_TRACK_MODIFICATIONS: false
+CELERY_BROKER_URL: redis://localhost:6379/0
+CELERY_RESULT_BACKEND: redis://localhost:6379/0
+PASSWORD_SALT: 123456*&sfftto
+SECRET_KEY: 654321@$ottffs
+SESSION_COOKIE_SAMESITE: Lax
+MYSQL_DATABASE_CHARSET: utf8mb4
+SQLALCHEMY_ECHO: false
+CELERY_TIMEZONE: Asia/Shanghai
+JINJA_FILTERS:
+  - recover_subject
+  - get_subject_url
+MAIL_SENDER: noreply@example.com
+MAIL_SENDER_ALIAS: my-arxiv-web
+MAIL_PASSWORD: whoknows
+MAIL_SERVER: smtp.example.com
+MAIL_PORT: 25
+MAIL_ABS_PATH: https://myweb.com/
+LOGIN_SESSION_PROTECTION: basic
+CTOKEN_EXPIRE_SECONDS: 21600
+GRAVATA_IMAGE_DEFAULT: robohash
+REDIS_CACHE_HOST: localhost
+REDIS_CACHE_PORT: 6379
+REDIS_CACHE_PASSWORD:
+REDIS_CACHE_DB: 1
+REDIS_CACHE_TIMEOUT: 300
+REDIS_CACHE_PREFIX: arxiv_
+PERIODIC_FIELD_DOWNLOAD:
+  - cond-mat
+  - quant-ph
+  - hep-lat
+
+
+
