@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, url_for, current_app
 from datetime import date, datetime, timedelta
 from ..models import db, Paper, Keyword, Favorite, Interest
 from ..tasks import kwmatch_task, arxiv_query
-from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict
+from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds
 from flask_login import current_user, login_required
 from sqlalchemy import and_
 from ..cache import cache
@@ -51,7 +51,7 @@ def api_today():
             res = jsonify({"results": get_page(jsonrs, pg).dict()})
         cachekey = "api_today_" + dtstring + kwstring
         current_app.logger.info("set cache key as %s" % cachekey)
-        cache.set(cachekey, jsonrs, timeout=60 * 60)
+        cache.set(cachekey, jsonrs, timeout=86400)
         return res
 
     # if logged in
@@ -77,7 +77,7 @@ def api_today():
     res = jsonify({"results": get_page(l, pg).dict()})
     cachekey = "api_today_" + str(current_user.id) + dtstring + kwstring
     current_app.logger.info("set cache key as %s" % cachekey)
-    cache.set(cachekey, l, timeout=60 * 60 * 3)
+    cache.set(cachekey, l, timeout=timeoutseconds())
     return res
 
 

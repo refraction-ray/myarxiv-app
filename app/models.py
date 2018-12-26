@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from hashlib import sha1
 from flask_login import UserMixin
 from .loginmanager import login_manager
+from .conf import conf
 
 db = SQLAlchemy()
 
@@ -72,11 +73,11 @@ class User(db.Model, UserMixin):
             "created_at": self.created_at.strftime("%Y %b %d"), "deleted": self.deleted, "admin": self.admin
         }
 
-    def hashpass(self, salt):
+    def hashpass(self, salt=conf['PASSWORD_SALT']):
         pw = self.email + self.password + salt
         self.password = sha1(pw.encode('utf-8')).hexdigest()
 
-    def checkpass(self, passtocheck, salt):
+    def checkpass(self, passtocheck, salt=conf['PASSWORD_SALT']):
         pw = self.email + passtocheck + salt
         return self.password == sha1(pw.encode('utf-8')).hexdigest()
 

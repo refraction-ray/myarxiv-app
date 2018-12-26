@@ -25,7 +25,7 @@ def jsonfrom(ps):
 
 
 def jsonwithkw(json, kwdict):
-    lst = Paperls(search_mode=2)
+    lst = Paperls(search_mode=0)
     lst.contents = json
     lst.interest_match(kwdict)
     res = [p for p in lst.contents if p.get('keyword', None)]
@@ -135,7 +135,7 @@ class get_page:
     dict = __repr__
 
 
-def pagetodict(pgobj):
+def pagetodict(pgobj): # pageobj defined in flask_sqlalchemy
     return {"has_prev": pgobj.has_prev,
             "has_next": pgobj.has_next, "prev_num": pgobj.prev_num,
             "next_num": pgobj.next_num, "page": pgobj.page, "nums": pgobj.per_page,

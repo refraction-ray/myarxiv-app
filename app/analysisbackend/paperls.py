@@ -41,7 +41,10 @@ class Paperls:
                  max_results=10,
                  sort_by="relevance",
                  sort_order="descending"):
-        if search_mode == 1:  # API case
+
+        if search_mode == 0:
+            pass
+        elif search_mode == 1:  # API case
             self.url, self.contents = query(search_query=search_query,
                                             id_list=id_list, start=start, max_results=max_results,
                                             sort_by=sort_by, sort_order=sort_order)

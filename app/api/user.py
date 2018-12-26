@@ -24,7 +24,7 @@ def api_registration():
     if User.query.filter_by(name=form.name.data).first() is not None:
         raise InvalidInput(message="The username has already been used.")
     u = User(name=form.name.data, email=form.email.data, password=form.password.data, created_at=datetime.now())
-    u.hashpass(current_app.config['PASSWORD_SALT'])
+    u.hashpass()
     db.session.add(u)
     db.session.commit()
     return jsonify({'message': 'the user is successfully created',
@@ -69,8 +69,11 @@ def api_keywords():
     else:
         js = request.json['items']
         u = User.query.filter_by(id=current_user.id).first()
-        u.keywords = [Keyword(keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
-        db.session.commit()
+        try:
+            u.keywords = [Keyword(keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+            db.session.commit()
+        except (KeyError, ValueError) as e:
+            raise InvalidInput(message="Something went wrong in the keyword form")
         # try delete relevant cache as much as possible
         cache.delete("api_today_" + str(current_user.id) + datetime.today().strftime("%Y%m%d"))
         return jsonify({"message": "the keywords are successfully updated",
@@ -89,8 +92,12 @@ def api_fields():
     ## post part
     js = request.json['fields']
     u = User.query.filter_by(id=current_user.id).first()
-    u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
-    db.session.commit()
+    try:
+        u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
+        db.session.commit()
+    except (KeyError, ValueError) as e:
+        raise InvalidInput(message="Something went wrong in the interest field form")
+
     return jsonify({"message": "the interest fields are successfully updated",
                     'state': 'success'})
 
