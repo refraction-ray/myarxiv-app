@@ -29,6 +29,7 @@ All commands below are executed in bash and the working directory is the root of
 * Run the flask app in docker (with both mysql and redis also in dockers)
 
   ```bash
+  docker-compose build
   docker-compose up -d
   ```
 

@@ -2,19 +2,26 @@ from flask import Flask
 from .models import db
 from celery import Celery
 from .helper import register_blueprints
-from .utils import *   # used for filters of jinja
+from .utils import *  # used for filters of jinja
 from .errorhandler import *  # used for errorhandlers of the app
 from .exceptions import *
 from .loginmanager import login_manager
 from .conf import conf
 from os import path
+from sqlalchemy import exc
 
 
-
-def create_app(blueprints=True):
+def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False)):
     app = Flask(__name__)
     app.config.update(conf)
     db.init_app(app)
+    if dbcreate is True:
+        with app.app_context():
+            try:
+                db.create_all()  ## if it is directly started by gunicorn, there might be several table insert at the same time
+                                    ## but the error is ok if gunicorn is watched by supervisord
+            except exc.OperationalError:
+                print("Maybe something went wrong on creating tables in mysql")
     app.secret_key = conf['SECRET_KEY'].encode('utf8')
     login_manager.init_app(app)
     if conf.get("JINJA_FILTERS", None):
@@ -36,7 +43,7 @@ def create_app(blueprints=True):
 
 
 def create_celery_app(app=None):
-    app = app or create_app(blueprints=False)
+    app = app or create_app(blueprints=False, dbcreate=False)
     celery = Celery(__name__, broker=app.config['CELERY_BROKER_URL'])
     celery.conf.update(app.config)
     TaskBase = celery.Task
