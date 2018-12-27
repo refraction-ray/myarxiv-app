@@ -39,7 +39,7 @@ def api_today():
         while not ps:
             dt -= timedelta(days=1)
             ps = Paper.query.filter(Paper.announce == dt).paginate(1, 100, False).items
-            prev += prev
+            prev += 1
             if prev > 3:
                 break
         jsonrs = jsonfrom(ps)
@@ -62,7 +62,7 @@ def api_today():
     while not ps:
         dt -= timedelta(days=1)
         ps = Paper.query.filter(Paper.announce == dt).all()
-        prev += prev
+        prev += 1
         if prev > 5:
             break
     ps = [p for p in ps if p.mainsubject.startswith(tuple(flist))]

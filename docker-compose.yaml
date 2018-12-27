@@ -1,0 +1,23 @@
+version: "2"
+services:
+  web:
+    build: .
+    ports:
+     - "9999:9999"
+    links:
+     - redis
+     - mysql
+    restart: on-failure
+    command: bash supervisor/delaystart.sh # just delete this command line if you don't need waiting for the init of mysql
+  redis:
+    image: redis
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: appdb
+
+## comments: when using this docker-compose mode, you need to change the host name for mysql and redis just as
+# mysql and redis in config_override.ymal in app folder, eg.
+# SQLALCHEMY_DATABASE_URI: mysql://root:password@mysql/appdb?charset=utf8mb4, REDIS_CACHE_HOST: redis,
+# CELERY_BROKER_URL: redis://redis:6379/0, CELERY_RESULT_BACKEND: redis://redis:6379/0
