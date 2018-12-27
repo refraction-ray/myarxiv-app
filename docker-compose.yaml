@@ -18,6 +18,6 @@ services:
       MYSQL_DATABASE: appdb
 
 ## comments: when using this docker-compose mode, you need to change the host name for mysql and redis just as
-# mysql and redis in config_override.ymal in app folder, eg.
+# mysql and redis in config_override.yaml in app folder, eg.
 # SQLALCHEMY_DATABASE_URI: mysql://root:password@mysql/appdb?charset=utf8mb4, REDIS_CACHE_HOST: redis,
 # CELERY_BROKER_URL: redis://redis:6379/0, CELERY_RESULT_BACKEND: redis://redis:6379/0
