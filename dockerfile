@@ -1,9 +1,8 @@
 FROM python:3.6
 LABEL author="refraction-ray"
 
-COPY requirements.txt /
-RUN pip install -r /requirements.txt
-RUN pip install gunicorn eventlet
+COPY requirements/prod.txt /
+RUN pip install -r /prod.txt
 
 RUN apt update && apt install -y supervisor
 

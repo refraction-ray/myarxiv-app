@@ -21,3 +21,4 @@ services:
 # mysql and redis in config_override.yaml in app folder, eg.
 # SQLALCHEMY_DATABASE_URI: mysql://root:password@mysql/appdb?charset=utf8mb4, REDIS_CACHE_HOST: redis,
 # CELERY_BROKER_URL: redis://redis:6379/0, CELERY_RESULT_BACKEND: redis://redis:6379/0
+# if you want init the database, remember also include DB_CREATE: true in config_override.yaml

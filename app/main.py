@@ -11,9 +11,11 @@ from os import path
 from sqlalchemy import exc
 
 
-def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False)):
+def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
     app = Flask(__name__)
     app.config.update(conf)
+    if testconf:
+        app.config.update(testconf)
     db.init_app(app)
     if dbcreate is True:
         with app.app_context():
