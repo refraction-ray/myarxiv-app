@@ -13,8 +13,9 @@ paper = Blueprint('paper', __name__)
 @paper.route('/api/today')
 def api_today():
     todaystring = date.today().strftime("%Y%m%d")
-    dtstring = request.args.get("date", todaystring) or todaystring
-    kwstring = request.args.get("keyword", "")
+    dtstring = request.args.get("date", todaystring) or todaystring # only support one day, similar to new in arxiv
+                                                                    # the recent API is separated and to be implemented
+    kwstring = request.args.get("keyword", "") # support multi keywords separated by ,
     pgstring = request.args.get("page", "1") or "1"
     try:
         pg = int(pgstring)
@@ -51,7 +52,7 @@ def api_today():
             res = jsonify({"results": get_page(jsonrs, pg).dict()})
         cachekey = "api_today_" + dtstring + kwstring
         current_app.logger.info("set cache key as %s" % cachekey)
-        cache.set(cachekey, jsonrs, timeout=86400)
+        cache.set(cachekey, jsonrs, timeout=3600)
         return res
 
     # if logged in

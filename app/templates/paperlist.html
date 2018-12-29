@@ -68,6 +68,13 @@
                             pid_list.push(self.items[i].pid);
 
                         }
+                    self.$nextTick(function(){
+                        if(window.MathJax) {
+                            console.log('rendering mathjax');
+                            window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+                        }
+                    });
+
                         {% if current_user.is_authenticated %}
                         var favquery = $.ajax({
                             url: "/api/favorites",
