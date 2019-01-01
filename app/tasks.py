@@ -9,7 +9,7 @@ from flask import current_app
 from celery.schedules import crontab
 from datetime import date, datetime
 from .security import ts
-from sqlalchemy import and_
+from sqlalchemy import and_, exc
 from functools import wraps
 from .analysisbackend.paperls import Paperls, kw_lst2dict
 from .analysisbackend.notification import sendmail
@@ -58,6 +58,39 @@ def kwmatch_task(sdate, kw):
     return l  # list
 
 
+def paper_into_db(ps):
+    '''
+
+    :param ps: list of dicts, papers by arxiv api, Paperls.contents
+    :return: the number of items inserted
+    '''
+    count = 0
+    if ps:
+        for p in ps:
+            if Paper.query.filter_by(arxivid=p['arxiv_id']).first() is None:
+                prow = Paper(announce=datetime.strptime(p['announce_date'], '%Y-%m-%d').date(),
+                             arxivid=p['arxiv_id'], title=p['title'],
+                             summary=p['summary'], mainsubject=p['subject_abbr'][0])
+
+                for i, a in enumerate(p['authors']):
+                    prow.authors.append(Author(authorrank=i + 1, author=a))
+                for i, s in enumerate(p['subject_abbr'][1:]):
+                    prow.subjects.append(Subject(subject=s))
+
+                try:
+                    db.session.add(prow)
+                    count += 1
+                    db.session.commit()
+                except exc.DataError:
+                    db.session.rollback()
+                    current_app.logger.warning("paper %s has illegal data to be inserted into database" % prow.arxivid)
+
+        current_app.logger.info("all daily paper are written into database")
+    else:
+        current_app.logger.info("no new paper")
+    return count
+
+
 @celery.task
 def arxiv_grab(category_list):
     current_app.logger.info("prepare to download arxiv data of today")
@@ -65,23 +98,7 @@ def arxiv_grab(category_list):
     for c in category_list:
         current_app.logger.info("prepare to download arxiv data of %s"%c)
         lst.merge(Paperls(search_mode=2, search_query=c, start=2, sort_by="submittedDate"))
-        if lst:
-            for p in lst.contents:
-                if Paper.query.filter_by(arxivid=p['arxiv_id']).first() is None:
-                    prow = Paper(announce=datetime.strptime(p['announce_date'], '%Y-%m-%d').date(),
-                                 arxivid=p['arxiv_id'], title=p['title'],
-                                 summary=p['summary'], mainsubject=p['subject_abbr'][0])
-
-                    for i, a in enumerate(p['authors']):
-                        prow.authors.append(Author(authorrank=i + 1, author=a))
-                    for i, s in enumerate(p['subject_abbr'][1:]):
-                        prow.subjects.append(Subject(subject=s))
-
-                    db.session.add(prow)
-            db.session.commit()
-            current_app.logger.info("all daily paper are written into database")
-        else:
-            current_app.logger.info("no new paper today")
+        paper_into_db(lst.contents)
 
 
 @celery.task
@@ -93,24 +110,7 @@ def arxiv_query(search_mode=1,
                 sort_by="relevance",
                 sort_order="descending"):
     ps = Paperls(search_mode, search_query, id_list, start, max_results, sort_by, sort_order)
-    count = 0
-    if ps:
-        for p in ps.contents:
-            if Paper.query.filter_by(arxivid=p['arxiv_id']).first() is None:
-                prow = Paper(announce=datetime.strptime(p['announce_date'], '%Y-%m-%d').date(),
-                             arxivid=p['arxiv_id'], title=p['title'],
-                             summary=p['summary'], mainsubject=p['subject_abbr'][0])
-
-                for i, a in enumerate(p['authors']):
-                    prow.authors.append(Author(authorrank=i + 1, author=a))
-                for i, s in enumerate(p['subject_abbr'][1:]):
-                    prow.subjects.append(Subject(subject=s))
-                current_app.logger.info("arXiv:%s is ready to be added in database" % prow.arxivid)
-                db.session.add(prow)
-                count += 1
-        db.session.commit()
-    return count
-
+    return paper_into_db(ps.contents)
 
 @celery.task
 def digestion_mail():
