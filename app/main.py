@@ -7,7 +7,7 @@ from .errorhandler import *  # used for errorhandlers of the app
 from .exceptions import *
 from .loginmanager import login_manager
 from .conf import conf
-from os import path
+import os
 from sqlalchemy import exc
 
 
@@ -39,7 +39,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
     # app.register_error_handler(404, on_404)
     # app.register_error_handler(InvalidInput, on_invalidinput)
     if blueprints is True:
-        register_blueprints(app, "app", path.abspath("./app"))
+        register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
 
     return app
 

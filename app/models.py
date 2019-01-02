@@ -33,8 +33,8 @@ class Subject(db.Model):
     #                   {'mysql_charset': "utf8mb4"})
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    pid = db.Column(db.Integer, db.ForeignKey("paper.id"))
-    subject = db.Column(db.String(25))
+    pid = db.Column(db.Integer, db.ForeignKey("paper.id"),nullable=False)
+    subject = db.Column(db.String(25),nullable=False)
 
 
 class Author(db.Model):
@@ -43,7 +43,7 @@ class Author(db.Model):
     #                   {'mysql_charset': "utf8mb4"})
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    pid = db.Column(db.Integer, db.ForeignKey("paper.id"))
+    pid = db.Column(db.Integer, db.ForeignKey("paper.id"),nullable=False)
     author = db.Column(db.String(50), nullable=False)
     authorrank = db.Column(db.Integer, nullable=False)
 
@@ -63,9 +63,9 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False)
     deleted = db.Column(db.Boolean, nullable=False, default=False)
     admin = db.Column(db.Boolean, nullable=False, default=False)
-    keywords = db.relationship("Keyword")
+    # keywords = db.relationship("Keyword")
     favorites = db.relationship("Favorite")
-    interests = db.relationship("Interest")
+    # interests = db.relationship("Interest")
 
     def dict(self):
         return {
@@ -86,7 +86,7 @@ class Keyword(db.Model):
     __tablename__ = "keyword"
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uid = db.Column(db.Integer, db.ForeignKey("user.id"))
+    uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     keyword = db.Column(db.String(100), nullable=False)
     weight = db.Column(db.Integer, nullable=False)
 
@@ -95,8 +95,8 @@ class Favorite(db.Model):
     __tablename__ = "favorite"
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uid = db.Column(db.Integer, db.ForeignKey("user.id"))
-    pid = db.Column(db.Integer, db.ForeignKey("paper.id"))
+    uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    pid = db.Column(db.Integer, db.ForeignKey("paper.id"),nullable=False)
 
 class UserInfo(db.Model):
     __tablename__ = "userinfo"
@@ -117,5 +117,5 @@ class Interest(db.Model):
     __tablename__ = "interest"
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uid = db.Column(db.Integer, db.ForeignKey("user.id"))
+    uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     interest = db.Column(db.String(50), nullable=False)

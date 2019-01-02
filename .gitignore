@@ -12,4 +12,6 @@ app/static/js/jquery*
 app/static/js/uikit*
 app/static/js/vue*
 TODO*
-tests/
+.coverage
+.pytest_cache/
+tests/config_test.yaml

@@ -68,9 +68,15 @@ def api_keywords():
         return jsonify({"results": ks})
     else:
         js = request.json['items']
-        u = User.query.filter_by(id=current_user.id).first()
+        u = current_user
         try:
-            u.keywords = [Keyword(keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+            # u.keywords = [Keyword(uid=u.id, keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+            newrows = [Keyword(uid=u.id, keyword=j['keyword'][:90], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+            oldrows = Keyword.query.filter_by(uid=current_user.id).all()
+            for oldrow in oldrows:
+                db.session.delete(oldrow)
+            for newrow in newrows:
+                db.session.add(newrow)
             db.session.commit()
         except (KeyError, ValueError) as e:
             raise InvalidInput(message="Something went wrong in the keyword form")
@@ -91,9 +97,15 @@ def api_fields():
         return jsonify(field_dict)
     ## post part
     js = request.json['fields']
-    u = User.query.filter_by(id=current_user.id).first()
+    u = current_user
     try:
-        u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
+        # u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
+        newrows = [Interest(uid=u.id, interest=j['abbr'][:45]) for j in js if j.get('checked', False) is True]
+        oldrows = Interest.query.filter_by(uid=current_user.id).all()
+        for oldrow in oldrows:
+            db.session.delete(oldrow)
+        for newrow in newrows:
+            db.session.add(newrow)
         db.session.commit()
     except (KeyError, ValueError) as e:
         raise InvalidInput(message="Something went wrong in the interest field form")
