@@ -4,7 +4,9 @@ from app.main import create_app
 from app.models import db as db_test
 from yaml import load
 from sqlalchemy import event
-from flask import current_app
+import logging
+import sys
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -13,6 +15,9 @@ except ImportError:
 # one need to prepare the config_test.yaml in tests directory with at least TESTING and SQLALCHEMY_DATABASE_URI changed
 # remember to change the database to the test one!!!
 testconffile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_test.yaml")
+with open(testconffile, "r") as conf:
+    testconf = load(conf, Loader=Loader)
+logging.basicConfig(level=getattr(logging, testconf['LOGGING_LEVEL'], None), stream=sys.stdout)
 
 
 def init_db():
@@ -34,9 +39,6 @@ def init_db():
 
 @pytest.fixture(scope='session')
 def app():
-    with open(testconffile, "r") as conf:
-        testconf = load(conf, Loader=Loader)
-    print(testconf)
     app = create_app(True, False, testconf=testconf)
 
     with app.app_context():
@@ -62,6 +64,7 @@ def db(app):
             # (optional step)
             session.expire_all()
             session.begin_nested()
+
     # db_test.init_app(current_app)
     yield db_test
     session.remove()
@@ -92,6 +95,8 @@ class AuthActions:
     def logout(self):
         return self._client.get('/api/logout')
 
+
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
+

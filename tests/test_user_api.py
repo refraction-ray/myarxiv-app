@@ -1,4 +1,6 @@
 from flask_login import current_user
+from app.security import ts
+from app.models import UserInfo
 
 
 def test_correct_login(client, auth, db):
@@ -23,14 +25,16 @@ def test_wrong_login(client, auth, db):
         assert r.status_code == 302
         assert r.headers['Location'] == 'http://localhost/login?next=%2Fapi%2Flogout'
 
+
 def test_correct_register(client, auth, db):
     with client:
         r = client.post(
-        '/api/registration', data={'name': 'test101', 'email':'test101@test.com','password': 'testtest'})
+            '/api/registration', data={'name': 'test101', 'email': 'test101@test.com', 'password': 'testtest'})
         assert r.json.get('message') == "the user is successfully created"
-        r = auth.login(email='test101@test.com',password='testtest')
+        r = auth.login(email='test101@test.com', password='testtest')
         assert current_user.is_authenticated is True
         r = auth.logout()
+
 
 def test_wrong_register(client, auth, db):
     with client:
@@ -45,3 +49,73 @@ def test_wrong_register(client, auth, db):
         r = client.post(
             '/api/registration', data={'name': 'test', 'mail': 'test.com', 'password': 'testtest'})
         assert r.json.get('message') == "Incorrect input in the form"
+
+
+def test_keywords_post(client, auth, db):
+    with client:
+        auth.login()
+        ctoken = ts.dumps(current_user.id)
+        r = client.post("/api/keywords",
+                        json={"ctoken": ctoken, "items":
+                            [{"keyword": "quantum computation", "weight": 10}]})
+        assert r.json.get('state') == "success"
+        r = client.get('/api/keywords')
+        assert r.json.get("results")[0]['weight'] == 10
+        assert len(r.json.get("results")) == 1
+        r = client.post("/api/keywords",
+                        json={"ctoken": ctoken[2:] + "x", "items":
+                            [{"keyword": "quantum computation", "weight": 10}]})
+        assert r.json.get('message') == "The token was expired, please reload the page."
+
+
+def test_keywords_get(client, auth, db):
+    with client:
+        auth.login()
+        r = client.get('/api/keywords')
+        assert r.json.get("results")[1]['keyword'] == "machine learning"
+        auth.logout()
+        r = client.get('/api/keywords')
+        assert r.status_code == 302
+
+
+def test_fields_post(client, auth, db):
+    with client:
+        auth.login()
+        ctoken = ts.dumps(current_user.id)
+        r = client.get("/api/fields")
+        assert r.json.get("quant-ph") is True
+        r = client.post("/api/fields", json={
+            "fields": [{"abbr": "cond-mat", "checked": True}]})
+        assert r.json.get("message") == "The token was expired, please reload the page."
+        r = client.post("/api/fields", json={
+            "ctoken": ctoken, "fields": [{"abbr": "cond-mat", "checked": True}]})
+        assert r.json.get("message") == "the interest fields are successfully updated"
+        r = client.get("/api/fields")
+        assert r.json.get("cond-mat") is True
+        assert r.json.get("quant-ph") is False
+        assert r.json.get("cond-mat.str-el") is None
+
+
+def test_userinfo_post(client, auth, db):
+    with client:
+        auth.login()
+        ctoken = ts.dumps(current_user.id)
+        r = client.post("/api/userinfo", data={"dailymail": True})
+        r = client.post("/api/userinfo", data={"ctoken":ctoken, "dailymail": True})
+        assert r.json.get("message") == "Incorrect input in the form"
+        r = client.post("/api/userinfo", data={"ctoken": ctoken, "dailymail": True,
+                                               "imgurl":"http://www.example.com/figure.jpg", "profile":"nb!" })
+        assert r.json.get("message") == "the user info is successfully updated"
+        r = client.get("/api/userinfo")
+        assert r.json.get("dailymail") is False # unverified user cannot subscribe on mails
+        assert r.json.get("profile") == "nb!"
+        ui = UserInfo.query.filter_by(uid=current_user.id).first()
+        ui.verified = True
+        db.session.commit()
+        r = client.post("/api/userinfo", data={"ctoken": ctoken, "dailymail": False,
+                                               "imgurl": "http://www.example.com/figure.jpg", "profile": "nb!!"})
+        assert r.json.get('state') == "success"
+        r = client.get("/api/userinfo")
+        assert r.json.get("profile") == "nb!!"
+        assert r.json.get("verified") is True
+        assert r.json.get("dailymail") is False

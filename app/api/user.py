@@ -136,7 +136,8 @@ def api_userinfo():
         raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
     ui.img = form.imgurl.data
     ui.profile = form.profile.data
-    ui.noti1 = form.dailymail.data
+    if ui.verified:
+        ui.noti1 = form.dailymail.data
     db.session.commit()
     return jsonify({"state": "success",
                     "message": "the user info is successfully updated"})

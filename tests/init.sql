@@ -235,7 +235,7 @@ SET character_set_client = @saved_cs_client ;
 
 LOCK TABLES `userinfo` WRITE;
 /*!40000 ALTER TABLE `userinfo` DISABLE KEYS */;
-INSERT INTO `userinfo` VALUES (0,0,0,'https://www.gravatar.com/avatar/cdbd6879db41fe9d4919cf5630fa0a2f?d=monsterid',1,'I am the first test user with the correct password input, haha',1);
+INSERT INTO `userinfo` VALUES (0,0,0,'https://www.gravatar.com/avatar/cdbd6879db41fe9d4919cf5630fa0a2f?d=monsterid',0,'I am the first test user with the correct password input, haha',1);
 ALTER TABLE `userinfo` ENABLE KEYS ;
 UNLOCK TABLES;
 SET TIME_ZONE=@OLD_TIME_ZONE ;

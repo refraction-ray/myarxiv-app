@@ -79,8 +79,8 @@ def paper_into_db(ps):
 
                 try:
                     db.session.add(prow)
-                    count += 1
                     db.session.commit()
+                    count += 1
                 except exc.DataError:
                     db.session.rollback()
                     current_app.logger.warning("paper %s has illegal data to be inserted into database" % prow.arxivid)

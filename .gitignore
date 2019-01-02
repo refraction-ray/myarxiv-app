@@ -16,3 +16,4 @@ TODO*
 .pytest_cache/
 tests/config_test.yaml
 tests/dbtest.py
+htmlcov/

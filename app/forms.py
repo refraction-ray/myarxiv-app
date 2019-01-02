@@ -19,5 +19,5 @@ class RegistrationForm(LoginForm):
 
 class UserInfoForm(Form):
     imgurl = StringField('imgurl', [validators.URL(), validators.Length(min=5, max=512)])
-    dailymail = BooleanField('dailymail')
+    dailymail = BooleanField('dailymail', false_values=["False","false","0"])
     profile = StringField('profile')
