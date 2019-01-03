@@ -6,6 +6,7 @@ from app.models import UserInfo
 def test_correct_login(client, auth, db):
     with client:
         r = auth.login()
+        assert current_user.email == "test@test.com"
         assert r.json.get('state') == 'success'
         assert current_user.is_authenticated is True
         r = auth.logout()
@@ -23,7 +24,9 @@ def test_wrong_login(client, auth, db):
         assert current_user.is_authenticated is False
         r = auth.logout()
         assert r.status_code == 302
-        assert r.headers['Location'] == 'http://localhost/login?next=%2Fapi%2Flogout'
+        # assert r.headers['Location'] == 'http://localhost/login?next=%2Fapi%2Flogout'
+        r = auth.logout()
+        assert r.status_code == 302 # logout of no user doesn't lead to problems
 
 
 def test_correct_register(client, auth, db):
@@ -75,7 +78,7 @@ def test_keywords_get(client, auth, db):
         assert r.json.get("results")[1]['keyword'] == "machine learning"
         auth.logout()
         r = client.get('/api/keywords')
-        assert r.status_code == 302
+        assert r.status_code == 403
 
 
 def test_fields_post(client, auth, db):
@@ -101,13 +104,13 @@ def test_userinfo_post(client, auth, db):
         auth.login()
         ctoken = ts.dumps(current_user.id)
         r = client.post("/api/userinfo", data={"dailymail": True})
-        r = client.post("/api/userinfo", data={"ctoken":ctoken, "dailymail": True})
+        r = client.post("/api/userinfo", data={"ctoken": ctoken, "dailymail": True})
         assert r.json.get("message") == "Incorrect input in the form"
         r = client.post("/api/userinfo", data={"ctoken": ctoken, "dailymail": True,
-                                               "imgurl":"http://www.example.com/figure.jpg", "profile":"nb!" })
+                                               "imgurl": "http://www.example.com/figure.jpg", "profile": "nb!"})
         assert r.json.get("message") == "the user info is successfully updated"
         r = client.get("/api/userinfo")
-        assert r.json.get("dailymail") is False # unverified user cannot subscribe on mails
+        assert r.json.get("dailymail") is False  # unverified user cannot subscribe on mails
         assert r.json.get("profile") == "nb!"
         ui = UserInfo.query.filter_by(uid=current_user.id).first()
         ui.verified = True
@@ -119,3 +122,31 @@ def test_userinfo_post(client, auth, db):
         assert r.json.get("profile") == "nb!!"
         assert r.json.get("verified") is True
         assert r.json.get("dailymail") is False
+
+
+def test_password_reset(client, auth, db):
+    with client:
+        r = client.post("/api/password/reset", data={"email": "test@test.net"})
+        assert r.json.get('message') == "No user use this email address"
+        r = client.post("/api/password/reset", data={"email": "test@test.com"})
+        assert r.json.get('message') == 'The email isn\'t verified, so you cannot reset the password'
+
+
+def test_password_edit(client, auth, db):
+    with client:
+        auth.login()
+        ctoken = ts.dumps(current_user.id)
+        r = client.post("/api/password/edit", data={ "ctoken": ctoken,
+            "email": "test@test.com", "password": "123456"})
+        assert r.json.get('message') == "Don't try to do something weird"
+        ui = UserInfo.query.filter_by(uid=current_user.id).first()
+        ui.verified = True
+        db.session.commit()
+        r = client.post("/api/password/edit", data={"ctoken": ctoken,
+                                                    "email": "test@test.com", "password": "123456"})
+        assert r.json.get('message') == "the password is successfully changed"
+
+def test_nochange_password(client, auth, db):
+    with client:
+        auth.login()
+        assert current_user.id == 1

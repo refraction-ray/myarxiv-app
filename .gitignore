@@ -17,3 +17,4 @@ TODO*
 tests/config_test.yaml
 tests/dbtest.py
 htmlcov/
+tests/test_test.py

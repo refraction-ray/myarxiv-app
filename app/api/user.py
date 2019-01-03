@@ -52,8 +52,8 @@ def api_login():
 
 
 @user.route("/api/logout")
-@login_required
-def api_logout():
+# @login_required
+def api_logout(): # weird combination between view and api?
     logout_user()
     return redirect("/login")
 

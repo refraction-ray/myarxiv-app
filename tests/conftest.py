@@ -6,6 +6,7 @@ from yaml import load
 from sqlalchemy import event
 import logging
 import sys
+from app.cache import cache as cache_test
 
 try:
     from yaml import CLoader as Loader
@@ -17,7 +18,7 @@ except ImportError:
 testconffile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_test.yaml")
 with open(testconffile, "r") as conf:
     testconf = load(conf, Loader=Loader)
-logging.basicConfig(level=getattr(logging, testconf['LOGGING_LEVEL'], None), stream=sys.stdout)
+logging.basicConfig(level=getattr(logging, testconf.get('LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
 
 
 def init_db():
@@ -44,6 +45,7 @@ def app():
     with app.app_context():
         init_db()
         yield app
+        cache_test.clear() # ensure cache is clear in case there is error quit of related test functions
 
 
 @pytest.fixture(scope='function')
@@ -70,6 +72,12 @@ def db(app):
     session.remove()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture(scope='function')
+def cache(app):
+    yield cache_test
+    cache_test.clear()
 
 
 @pytest.fixture
@@ -99,4 +107,3 @@ class AuthActions:
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
-
