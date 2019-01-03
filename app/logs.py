@@ -29,34 +29,42 @@ class SSLSMTPHandler(SMTPHandler):
             self.handleError(record)
 
 
+def log_init_app(app):
+    # Create file handler for error/warning/info/debug logs
+    file_handler = RotatingFileHandler('logs/app.log', maxBytes=1 * 1024 * 1024, backupCount=100)
 
-# Create file handler for error/warning/info/debug logs
-file_handler = RotatingFileHandler('logs/app.log', maxBytes=1 * 1024 * 1024, backupCount=100)
+    # Apply format to the log messages
+    formatter = logging.Formatter("[%(asctime)s] |  %(levelname)s | {%(pathname)s:%(lineno)d} | %(message)s")
+    file_handler.setFormatter(formatter)
 
-# Apply format to the log messages
-formatter = logging.Formatter("[%(asctime)s] |  %(levelname)s | {%(pathname)s:%(lineno)d} | %(message)s")
-file_handler.setFormatter(formatter)
+    file_handler.setLevel(getattr(logging, app.config['LOGFILE_LEVEL']))
 
-file_handler.setLevel(getattr(logging,conf['LOGFILE_LEVEL']))
+    # Create equivalent mail handler using hacking class for SSL email
+    mail_handler = SSLSMTPHandler((app.config['MAIL_SERVER'], int(app.config['MAIL_PORT'])),
+                                  app.config['MAIL_SENDER'], [app.config['MAIL_SENDER']],
+                                  'Myarxiv app failure log',
+                                  credentials=(app.config['MAIL_SENDER'], app.config['MAIL_PASSWORD']))
 
+    # Set the email format
+    mail_handler.setFormatter(logging.Formatter('''
+    Message type:       %(levelname)s
+    Location:           %(pathname)s:%(lineno)d
+    Module:             %(module)s
+    Function:           %(funcName)s
+    Time:               %(asctime)s
 
-# Create equivalent mail handler
-mail_handler = SSLSMTPHandler((conf['MAIL_SERVER'], int(conf['MAIL_PORT'])),
-                              conf['MAIL_SENDER'], [conf['MAIL_SENDER']], 'myarix app failure',
-                              credentials=(conf['MAIL_SENDER'], conf['MAIL_PASSWORD']))
+    Message:
 
-# Set the email format
-mail_handler.setFormatter(logging.Formatter('''
-Message type:       %(levelname)s
-Location:           %(pathname)s:%(lineno)d
-Module:             %(module)s
-Function:           %(funcName)s
-Time:               %(asctime)s
+    %(message)s
+    '''))
 
-Message:
-
-%(message)s
-'''))
-
-# Only email errors, not warnings
-mail_handler.setLevel(logging.ERROR)
+    mail_handler.setLevel(logging.ERROR)
+    print(app.logger.handlers)
+    loggers = [app.logger, logging.getLogger('sqlalchemy'), logging.getLogger('werkzeug'), logging.getLogger('celery')]
+    print("setting on log:%s"%app.config["LOG_FILE"])
+    if app.config["LOG_FILE"]:
+        for logger in loggers:
+            logger.addHandler(file_handler)
+    if app.config["MAIL_ON_ERROR"]:
+        for logger in loggers:
+            logger.addHandler(mail_handler)

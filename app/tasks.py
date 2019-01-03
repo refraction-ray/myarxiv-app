@@ -35,10 +35,12 @@ field_list = conf['PERIODIC_FIELD_DOWNLOAD']
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
+
     sender.add_periodic_task(
         crontab(hour=9, minute=39, day_of_week=[1, 2, 3, 4, 5]),
         arxiv_grab.s(field_list),
     )
+
     sender.add_periodic_task(
         crontab(hour=9, minute=49, day_of_week=[1, 2, 3, 4, 5]),
         digestion_mail.s(),

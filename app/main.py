@@ -10,7 +10,7 @@ from .conf import conf
 import os
 from sqlalchemy import exc  # exception base for sqlalchemy
 import logging
-from .logs import mail_handler, file_handler
+from .logs import log_init_app
 
 
 def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
@@ -19,7 +19,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
     if testconf:
         app.config.update(testconf)
     db.init_app(app)
-    if dbcreate is True:
+    if dbcreate is True and app.config.get("DB_CREATE", False):
         with app.app_context():
             try:
                 db.create_all()  ## if it is directly started by gunicorn, there might be several table insert at the same time
@@ -28,8 +28,8 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
                 print("Maybe something went wrong on creating tables in mysql")
     app.secret_key = conf['SECRET_KEY'].encode('utf8')
     login_manager.init_app(app)
-    if conf.get("JINJA_FILTERS", None):
-        for filter in conf["JINJA_FILTERS"]:
+    if app.config.get("JINJA_FILTERS", None):
+        for filter in app.config["JINJA_FILTERS"]:
             app.jinja_env.filters[filter] = globals()[filter]
     for item in globals():
         if item.startswith("on_"):
@@ -40,17 +40,11 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
                 app.register_error_handler(int(item[3:]), globals()[item])
     # app.register_error_handler(404, on_404)
     # app.register_error_handler(InvalidInput, on_invalidinput)
-    print("app.debug: %s"%app.debug)
-    loggers = [app.logger, logging.getLogger('sqlalchemy'), logging.getLogger('werkzeug'), logging.getLogger('celery')]
+    print("app.debug: %s" % app.debug)
 
-    if app.config["LOG_FILE"]:
-        for logger in loggers:
-            logger.addHandler(file_handler)
-    if app.config["MAIL_ON_ERROR"]:
-        for logger in loggers:
-            logger.addHandler(mail_handler)
     if blueprints is True:
         register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
+        log_init_app(app)
 
     return app
 
