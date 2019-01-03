@@ -8,7 +8,9 @@ from .exceptions import *
 from .loginmanager import login_manager
 from .conf import conf
 import os
-from sqlalchemy import exc
+from sqlalchemy import exc  # exception base for sqlalchemy
+import logging
+from .logs import mail_handler, file_handler
 
 
 def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
@@ -21,7 +23,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
         with app.app_context():
             try:
                 db.create_all()  ## if it is directly started by gunicorn, there might be several table insert at the same time
-                                    ## but the error is ok if gunicorn is watched by supervisord
+                ## but the error is ok if gunicorn is watched by supervisord
             except exc.OperationalError:
                 print("Maybe something went wrong on creating tables in mysql")
     app.secret_key = conf['SECRET_KEY'].encode('utf8')
@@ -38,6 +40,15 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
                 app.register_error_handler(int(item[3:]), globals()[item])
     # app.register_error_handler(404, on_404)
     # app.register_error_handler(InvalidInput, on_invalidinput)
+    print("app.debug: %s"%app.debug)
+    loggers = [app.logger, logging.getLogger('sqlalchemy'), logging.getLogger('werkzeug'), logging.getLogger('celery')]
+
+    if app.config["LOG_FILE"]:
+        for logger in loggers:
+            logger.addHandler(file_handler)
+    if app.config["MAIL_ON_ERROR"]:
+        for logger in loggers:
+            logger.addHandler(mail_handler)
     if blueprints is True:
         register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
 

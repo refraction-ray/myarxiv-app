@@ -4,6 +4,7 @@ from datetime import datetime
 from .analysisbackend.cons import category
 from .analysisbackend.paperls import Paperls
 from .conf import conf
+from .security import ts
 
 def jsonfrom(ps):
     l = []
@@ -55,6 +56,9 @@ def recover_subject(subject_abbr):
         return s
     except KeyError:
         pass
+
+def ctokenize(uid): # can be registered as jinja2 filter
+    return ts.dumps(uid)
 
 
 def get_gravatar_url(email):

@@ -2,23 +2,16 @@ import os
 import pytest
 from app.main import create_app
 from app.models import db as db_test
-from yaml import load
 from sqlalchemy import event
 import logging
 import sys
 from app.cache import cache as cache_test
+from app.helper import get_config
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
 
-# one need to prepare the config_test.yaml in tests directory with at least TESTING and SQLALCHEMY_DATABASE_URI changed
-# remember to change the database to the test one!!!
-testconffile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_test.yaml")
-with open(testconffile, "r") as conf:
-    testconf = load(conf, Loader=Loader)
-logging.basicConfig(level=getattr(logging, testconf.get('LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
+testconf = get_config(name="config_test.yaml", override="config_test_override.yaml",
+                      path=os.path.dirname(os.path.abspath(__file__)))
+logging.basicConfig(level=getattr(logging, testconf.get('TEST_LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
 
 
 def init_db():
@@ -45,7 +38,7 @@ def app():
     with app.app_context():
         init_db()
         yield app
-        cache_test.clear() # ensure cache is clear in case there is error quit of related test functions
+        cache_test.clear()  # ensure cache is clear in case there is error quit of related test functions
 
 
 @pytest.fixture(scope='function')

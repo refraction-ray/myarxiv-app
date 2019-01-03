@@ -14,12 +14,17 @@ except ImportError:
     from yaml import Loader
 
 
-def get_config(overide=None):
-    dirpath = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(dirpath, "config.yaml"), 'r') as conffile:
+def get_config(name=None, override=None, path=None):
+    if not path:
+        dirpath = os.path.dirname(os.path.abspath(__file__))
+    else:
+        dirpath = path
+    if not name:
+        name = "config.yaml"
+    with open(os.path.join(dirpath, name), 'r') as conffile:
         conf = load(conffile, Loader=Loader)
-    if overide:
-        with open(os.path.join(dirpath, overide), "r") as conffile:
+    if override:
+        with open(os.path.join(dirpath, override), "r") as conffile:
             confo = load(conffile, Loader=Loader)
         conf.update(confo)
     return conf

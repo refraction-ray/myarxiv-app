@@ -14,7 +14,8 @@ app/static/js/vue*
 TODO*
 .coverage
 .pytest_cache/
-tests/config_test.yaml
+tests/config_test_override.yaml
 tests/dbtest.py
 htmlcov/
 tests/test_test.py
+logs/*.log

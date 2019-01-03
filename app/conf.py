@@ -3,7 +3,7 @@ import os
 
 confpath = os.environ.get("OVERRIDE_CONF", None) or "config_override.yaml"
 
-conf = get_config(overide=confpath)
+conf = get_config(override=confpath)
 
 maildict = {'sender': conf['MAIL_SENDER'], 'sender_alias': conf['MAIL_SENDER_ALIAS'],
             'password': conf['MAIL_PASSWORD'],

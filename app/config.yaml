@@ -30,6 +30,9 @@ PERIODIC_FIELD_DOWNLOAD:
   - cond-mat
   - quant-ph
   - hep-lat
+LOG_FILE: true
+LOGFILE_LEVEL: WARNING
+MAIL_ON_ERROR: false
 
 
 
