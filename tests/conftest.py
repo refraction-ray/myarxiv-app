@@ -33,6 +33,7 @@ def init_db():
 
 @pytest.fixture(scope='session')
 def app():
+
     app = create_app(True, False, testconf=testconf)
 
     with app.app_context():

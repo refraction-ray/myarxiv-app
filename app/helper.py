@@ -38,13 +38,14 @@ def register_blueprints(app, package_name, package_path):
     :param package_path: the package path
     """
     rv = []
-    # print(package_path)
+    blacklist = ["wsgi", "dbinit"]
     for _, name, _ in pkgutil.iter_modules([package_path]):
-        m = importlib.import_module('%s.%s' % (package_name, name))
-        for item in dir(m):
-            item = getattr(m, item)
-            if isinstance(item, Blueprint):
-                app.register_blueprint(item)
-                print(item)
-            rv.append(item)
+        if name not in blacklist:
+            m = importlib.import_module('%s.%s' % (package_name, name))
+            for item in dir(m):
+                item = getattr(m, item)
+                if isinstance(item, Blueprint):
+                    app.register_blueprint(item)
+                    print(item)
+                rv.append(item)
     return rv

@@ -59,12 +59,12 @@ def log_init_app(app):
     '''))
 
     mail_handler.setLevel(logging.ERROR)
-    print(app.logger.handlers)
+
     loggers = [app.logger, logging.getLogger('sqlalchemy'), logging.getLogger('werkzeug'), logging.getLogger('celery')]
-    print("setting on log:%s"%app.config["LOG_FILE"])
     if app.config["LOG_FILE"]:
         for logger in loggers:
             logger.addHandler(file_handler)
+    print(app.logger.handlers)
     if app.config["MAIL_ON_ERROR"]:
         for logger in loggers:
             logger.addHandler(mail_handler)

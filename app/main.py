@@ -14,6 +14,8 @@ from .logs import log_init_app
 
 
 def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
+    print("------------")
+    print("entering create_app()")
     app = Flask(__name__)
     app.config.update(conf)
     if testconf:
@@ -46,6 +48,8 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
         register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
         log_init_app(app)
 
+    print("finish the app factory")
+    print("------------")
     return app
 
 
