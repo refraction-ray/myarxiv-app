@@ -33,9 +33,9 @@ def email_limit(func):  # decorator to limit the frequency of email to the same 
 
 field_list = conf['PERIODIC_FIELD_DOWNLOAD']
 
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-
     sender.add_periodic_task(
         crontab(hour=9, minute=39, day_of_week=[1, 2, 3, 4, 5]),
         arxiv_grab.s(field_list),
@@ -60,7 +60,7 @@ def kwmatch_task(sdate, kw):
     return l  # list
 
 
-def paper_into_db(ps):
+def paper_into_db(ps, backup=True):
     '''
 
     :param ps: list of dicts, papers by arxiv api, Paperls.contents
@@ -86,10 +86,16 @@ def paper_into_db(ps):
                 except exc.DataError:
                     db.session.rollback()
                     current_app.logger.warning("paper %s has illegal data to be inserted into database" % prow.arxivid)
+                    if backup:
+                        current_app.logger.info("try another mode to write the paper data")
+                        p = Paperls(search_mode=1, id_list=[prow.arxivid])
+                        counte = paper_into_db(p.contents, backup=False)
+                        if counte == 0:
+                            current_app.logger.error("paper %s failed to be inserted into database" % prow.arxivid)
+                        elif counte == 1:
+                            count += 1
 
-        current_app.logger.info("all daily paper are written into database")
-    else:
-        current_app.logger.info("no new paper")
+    current_app.logger.info("%s papers are written into database"%count)
     return count
 
 
@@ -98,7 +104,7 @@ def arxiv_grab(category_list):
     current_app.logger.info("prepare to download arxiv data of today")
     lst = Paperls(search_mode=2)
     for c in category_list:
-        current_app.logger.info("prepare to download arxiv data of %s"%c)
+        current_app.logger.info("prepare to download arxiv data of %s" % c)
         lst.merge(Paperls(search_mode=2, search_query=c, start=2, sort_by="submittedDate"))
         paper_into_db(lst.contents)
 
@@ -113,6 +119,7 @@ def arxiv_query(search_mode=1,
                 sort_order="descending"):
     ps = Paperls(search_mode, search_query, id_list, start, max_results, sort_by, sort_order)
     return paper_into_db(ps.contents)
+
 
 @celery.task
 def digestion_mail():
