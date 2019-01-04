@@ -7,7 +7,7 @@ from .conf import conf
 from .security import ts
 
 
-def jsonfrom(ps):
+def jsonfrom(ps):  # ps is the list by Paper model
     l = []
     for p in ps:
         m = {}
@@ -26,7 +26,7 @@ def jsonfrom(ps):
     return l
 
 
-def jsonwithkw(json, kwdict):
+def jsonwithkw(json, kwdict):  # json is the return form jsonfromps
     lst = Paperls(search_mode=0)
     lst.contents = json
     lst.interest_match(kwdict)
@@ -141,7 +141,7 @@ class get_page:
     dict = __repr__
 
 
-def pagetodict(pgobj):  # pageobj defined in flask_sqlalchemy
+def pagetodict(pgobj):  # pageobj defined in flask_sqlalchemy, make the interface consitent with customized getpage
     return {"has_prev": pgobj.has_prev,
             "has_next": pgobj.has_next, "prev_num": pgobj.prev_num,
             "next_num": pgobj.next_num, "page": pgobj.page, "nums": pgobj.per_page,

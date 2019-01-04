@@ -76,13 +76,9 @@
                     });
 
                         {% if current_user.is_authenticated %}
-                        var favquery = $.ajax({
-                            url: "/api/favorites",
-                            data: JSON.stringify({id: pid_list}),
-                            type: "POST",
-                            dataType: "json",
-                            contentType: "application/json"
-                        });
+
+                        var favquery = $.postJSON("/api/favorites",{id: pid_list});
+
                         favquery.done(function (data) {
                             for (let i = 0; i < self.items.length; i++) {
                                 self.items[i].favorite = data.results[i];

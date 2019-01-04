@@ -4,18 +4,18 @@ from ..models import db, Paper, Keyword, Favorite, Interest
 from ..tasks import kwmatch_task, arxiv_query
 from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds
 from flask_login import current_user, login_required
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from ..cache import cache
+from ..exceptions import InvalidInput
 
 paper = Blueprint('paper', __name__)
 
 
-@paper.route('/api/today')
+@paper.route('/api/today') # only support data param and page param
 def api_today():
     todaystring = date.today().strftime("%Y%m%d")
-    dtstring = request.args.get("date", todaystring) or todaystring # only support one day, similar to new in arxiv
-                                                                    # the recent API is separated and to be implemented
-    kwstring = request.args.get("keyword", "") # support multi keywords separated by ,
+    dtstring = request.args.get("date", todaystring) or todaystring  # only support one day, similar to new in arxiv
+    # the recent API is separated and to be implemented
     pgstring = request.args.get("page", "1") or "1"
     try:
         pg = int(pgstring)
@@ -26,7 +26,7 @@ def api_today():
     except ValueError:
         dtstring = todaystring
         dt = date.today()
-    cachekey = "api_today_" + str(getattr(current_user, "id", "")) + dtstring + kwstring
+    cachekey = "api_today_" + str(getattr(current_user, "id", "")) + dtstring
     current_app.logger.info("find cache key on %s" % cachekey)
     res = cache.get(cachekey)
     if res is not None:
@@ -34,25 +34,20 @@ def api_today():
         return jsonify({"results": get_page(res, pg).dict()})
 
     if not current_user.is_authenticated:
-        ps = Paper.query.filter(Paper.announce == dt).paginate(1, 100,
+        ps = Paper.query.filter(Paper.announce == dt).paginate(1, 200,
                                                                False).items  # limit the recourse for unregistered user
         prev = 0
         while not ps:
             dt -= timedelta(days=1)
-            ps = Paper.query.filter(Paper.announce == dt).paginate(1, 100, False).items
+            ps = Paper.query.filter(Paper.announce == dt).paginate(1, 200, False).items
             prev += 1
             if prev > 3:
                 break
         jsonrs = jsonfrom(ps)
-        if not kwstring:
-            res = jsonify({"results": get_page(jsonrs, pg).dict()})
-        else:
-            kwstrings = kwstring.split(",")
-            jsonrs = jsonwithkw(jsonrs, {kw: 1 for kw in kwstrings})
-            res = jsonify({"results": get_page(jsonrs, pg).dict()})
-        cachekey = "api_today_" + dtstring + kwstring
+        res = jsonify({"results": get_page(jsonrs, pg).dict()})
+        cachekey = "api_today_" + dtstring
         current_app.logger.info("set cache key as %s" % cachekey)
-        cache.set(cachekey, jsonrs, timeout=3600)
+        cache.set(cachekey, jsonrs, timeout=3600*6)
         return res
 
     # if logged in
@@ -68,15 +63,11 @@ def api_today():
             break
     ps = [p for p in ps if p.mainsubject.startswith(tuple(flist))]
     jsonrs = jsonfrom(ps)
-    if not kwstring:
-        kws = Keyword.query.filter_by(uid=current_user.id).all()
-        kw_dict = {kw.keyword: kw.weight for kw in kws}
-    else:
-        kwstrings = kwstring.split(",")
-        kw_dict = {kw: 1 for kw in kwstrings}
+    kws = Keyword.query.filter_by(uid=current_user.id).all()
+    kw_dict = {kw.keyword: kw.weight for kw in kws}
     l = jsonwithkw(jsonrs, kw_dict)
     res = jsonify({"results": get_page(l, pg).dict()})
-    cachekey = "api_today_" + str(current_user.id) + dtstring + kwstring
+    cachekey = "api_today_" + str(current_user.id) + dtstring
     current_app.logger.info("set cache key as %s" % cachekey)
     cache.set(cachekey, l, timeout=timeoutseconds())
     return res
@@ -132,6 +123,87 @@ def api_favorites_switch():
             db.session.delete(f)
     db.session.commit()
     return jsonify({"message": "the papers are switched in terms of favorites"})
+
+
+@paper.route('/api/query', methods=['POST'])
+def api_query():
+    """
+    implemented options include:
+    authors(list, full name is required), dates (list, in the form %Y-%m-%d)
+    subjects (list), page(int), limit(int, how many items in one page), keywords(list),
+    default_keywords (bool, add keywords of the user in the search list)
+    default_subjects (bool), favorites(bool, only include favorite paper of the user)
+
+    :return:
+    """
+    r = request.json
+
+    dates = r.get('dates', [])
+    if not dates:
+        for d in range(30):
+            dates.append((date.today() - timedelta(days=d)).strftime("%Y-%m-%d"))
+    try:
+        dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:60]]
+    except (TypeError, ValueError) as e:
+        raise InvalidInput(message="invalid form of date strings")
+
+    subjects = r.get('subjects', [])
+    default_subjects = r.get('default_subjects', False)
+    try:
+        if default_subjects and current_user.is_authenticated:
+            ss = Interest.query.filter_by(uid=current_user.id).all()
+            ss_subject = [s.interest for s in ss]
+            subjects.extend(ss_subject)
+        subjects = list(subjects)
+    except (TypeError, ValueError) as e:
+        raise InvalidInput(message="invalid form of subjects")
+
+    if subjects:
+        ps = Paper.query.filter(and_(Paper.announce.in_(dates), or_(
+            *[Paper.mainsubject.like(start + "%") for start in subjects]
+        ))).all()
+    else:
+        ps = Paper.query.filter(Paper.announce.in_(dates)).all()
+
+    favorite = r.get('favorites', False)
+    if favorite:
+        fs = Favorite.query.filter_by(uid=current_user.id).all()
+        fs_set = set([f.pid for f in fs])
+        ps = [p for p in ps if p.id in fs_set]
+
+    authors = r.get('authors', None)
+    if authors:
+        try:
+            authors = set(authors)
+            ps = [p for p in ps if authors.intersection(set([a.author for a in p.authors]))]
+        except (TypeError, ValueError) as e:
+            raise InvalidInput(message="invalid form of authors")
+
+    keywords = r.get('keywords', [])
+    default_keywords = r.get('default_keywords', False)
+    try:
+        if default_keywords and current_user.is_authenticated:
+            ks = Keyword.query.filter_by(uid=current_user.id).all()
+            keywords.extend([k.keyword for k in ks])
+        kw_dict = {k: 1 for k in keywords}
+    except (TypeError, ValueError) as e:
+        raise InvalidInput(message="invalid form of keywords")
+
+    jsonrs = jsonfrom(ps)
+    if kw_dict:
+        jsonrs = jsonwithkw(jsonrs, kw_dict)
+
+    try:
+        page = r.get('page', "1")
+        page = int(page)
+        limit = r.get('limit', "10")
+        limit = int(limit)
+        if limit > 100:
+            limit = 100
+    except (TypeError, ValueError) as e:
+        raise InvalidInput(message="invalid form of pages")
+    jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True) # maybe add sorted keys option later
+    return jsonify({"results": get_page(jsonrs, page, nums=limit).dict()})
 
 
 @paper.route('/api/papers', methods=["POST"])

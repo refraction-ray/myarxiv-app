@@ -40,3 +40,22 @@ def test_favorite_get(client, auth):
         r = client.get("/api/favorites")
         assert r.json.get("results").get("has_next") == False
         assert len(r.json.get('results').get('items')) == 1
+
+
+def test_correct_query(client, auth):
+    with client:
+        r = client.post("/api/query", json={"dates": ["2018-12-17"]})
+        assert len(r.json.get('results')['items']) == 3
+        r = client.post("/api/query", json={"dates": ["2019-12-17"]})
+        assert r.json.get('results')['last'] == 1
+        assert r.json.get('results')['nums'] == 10
+        auth.login()
+        r = client.post("/api/query", json={"dates": ["2018-12-17","2019-12-31"],
+                                            "default_subjects": True,
+                                            "default_keywords": True,
+                                            "keywords": ["brain"]})
+        assert r.status_code == 200
+        assert len(r.json.get('results')['items'][0]['keyword']) == 3
+        r = client.post("/api/query", json={"dates": ["2018-12-17","2019-12-31"],
+                                            "favorites": True})
+        assert len(r.json.get('results')['items']) == 1
