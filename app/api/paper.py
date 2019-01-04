@@ -1,17 +1,19 @@
 from flask import Blueprint, request, jsonify, url_for, current_app
 from datetime import date, datetime, timedelta
+import json
+from flask_login import current_user, login_required
+from sqlalchemy import and_, or_
+
 from ..models import db, Paper, Keyword, Favorite, Interest
 from ..tasks import kwmatch_task, arxiv_query
 from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds
-from flask_login import current_user, login_required
-from sqlalchemy import and_, or_
 from ..cache import cache
 from ..exceptions import InvalidInput
 
 paper = Blueprint('paper', __name__)
 
 
-@paper.route('/api/today') # only support data param and page param
+@paper.route('/api/today')  # only support data param and page param
 def api_today():
     todaystring = date.today().strftime("%Y%m%d")
     dtstring = request.args.get("date", todaystring) or todaystring  # only support one day, similar to new in arxiv
@@ -47,7 +49,7 @@ def api_today():
         res = jsonify({"results": get_page(jsonrs, pg).dict()})
         cachekey = "api_today_" + dtstring
         current_app.logger.info("set cache key as %s" % cachekey)
-        cache.set(cachekey, jsonrs, timeout=3600*6)
+        cache.set(cachekey, jsonrs, timeout=3600 * 6)
         return res
 
     # if logged in
@@ -137,6 +139,21 @@ def api_query():
     :return:
     """
     r = request.json
+    cache_key = json.dumps(r) + str(getattr(current_user, "id", ""))
+    c = cache.get(cache_key)
+
+    try:
+        page = r.get('page', None) or request.args.get('page', None) or "1"
+        page = int(page)
+        limit = r.get('limit', "10")
+        limit = int(limit)
+        if limit > 100:
+            limit = 100
+    except (TypeError, ValueError) as e:
+        raise InvalidInput(message="invalid form of pages")
+
+    if c:
+        return jsonify({"results": get_page(c, page, nums=limit).dict()})
 
     dates = r.get('dates', [])
     if not dates:
@@ -193,16 +210,14 @@ def api_query():
     if kw_dict:
         jsonrs = jsonwithkw(jsonrs, kw_dict)
 
-    try:
-        page = r.get('page', "1")
-        page = int(page)
-        limit = r.get('limit', "10")
-        limit = int(limit)
-        if limit > 100:
-            limit = 100
-    except (TypeError, ValueError) as e:
-        raise InvalidInput(message="invalid form of pages")
-    jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True) # maybe add sorted keys option later
+    jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True)  # maybe add sorted keys option later
+
+    if len(jsonrs) > 200:
+        timeout = 60 * 15
+    else:
+        timeout = 60 * 30
+    cache.set(cache_key, jsonrs, timeout)
+
     return jsonify({"results": get_page(jsonrs, page, nums=limit).dict()})
 
 

@@ -2,150 +2,208 @@
 
 {% block head %}
 
-<script>
-    $(function () {
-        var example1 = new Vue({
-            el: '#pl',
-            delimiters: ["<%", "%>"],
-            data: {
-                ready: true,
-                title: "Coming Soon...",
-                comment: "Please wait for several seconds to see today's highlight only for you",
-                items: [],
-                keyword: "{{ keyword }}",
-                date: "{{date}}",
-                page: "{{page}}",
-                pageobj: {}
+    <script>
+        $(function () {
+            var example1 = new Vue({
+                el: '#pl',
+                delimiters: ["<%", "%>"],
+                data: {
+                    ready: true,
+                    title: "Coming Soon...",
+                    comment: "Please wait for several seconds to see today's highlight only for you",
+                    items: [],
+                    date: "{{date}}",
+                    page:  "{{page}}",
+                    pageobj: {}
 
-            },
-            methods: {
-                favorite: function (index, event) {
-                    console.log("favorite function is clicked");
-                    event.preventDefault();
-                    var self = this;
-                    var favaddquery = $.ajax({
+                },
+                methods: {
+                    favorite: function (index, event) {
+                        console.log("favorite function is clicked");
+                        event.preventDefault();
+                        var self = this;
+                        var favaddquery = $.ajax({
                             url: "/api/favorites/switch",
                             data: JSON.stringify({id: [this.items[index]['pid']]}),
                             type: "POST",
                             dataType: "json",
                             contentType: "application/json"
                         });
-                    if (this.items[index].favorite===0){
-                        var newitem = this.items[index];
-                        newitem.favstyle = {color: 'red'};
-                        newitem.favorite = 1;
-                        Vue.set(this.items, index, newitem);
-                    }
-                    else{
-                        var newitem = this.items[index];
-                        newitem.favstyle = {color: 'black'};
-                        newitem.favorite = 0;
-                        Vue.set(this.items, index, newitem);
-                    }
-
-
-
-                }
-            },
-            created: function () {
-                var self = this;
-                {% if favlist %}
-                var url = "/api/favorites?"+$.param({page: this.page});
-                {% else %}
-                var url = "/api/today?" + $.param({keyword: this.keyword, date: this.date, page: this.page});
-                {% endif %}
-                var jsdt = $.getJSON(url);
-                jsdt.done(function (data) {
-                    self.items = data.results.items;
-                    self.pageobj.page = self.page;
-                    self.pageobj.hasprev = data.results['has_prev'];
-                    self.pageobj.hasnext = data.results['has_next'];
-                    // if(self.pageobj.hasnext){console.log("true for next")};
-                    if (self.items.length > 0) {
-                        self.ready = false;
-                        var pid_list = [];
-                        for (let i = 0; i < self.items.length; i++) {
-                            pid_list.push(self.items[i].pid);
-
+                        if (this.items[index].favorite === 0) {
+                            var newitem = this.items[index];
+                            newitem.favstyle = {color: 'red'};
+                            newitem.favorite = 1;
+                            Vue.set(this.items, index, newitem);
                         }
-                    self.$nextTick(function(){
-                        if(window.MathJax) {
-                            console.log('rendering mathjax');
-                            window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+                        else {
+                            var newitem = this.items[index];
+                            newitem.favstyle = {color: 'black'};
+                            newitem.favorite = 0;
+                            Vue.set(this.items, index, newitem);
                         }
-                    });
 
-                        {% if current_user.is_authenticated %}
+                    },
 
-                        var favquery = $.postJSON("/api/favorites",{id: pid_list});
+                    getpage: function () {
+                        var self = this;
+                        {% if favlist %}
+                            var url = "/api/favorites?" + $.param({page: this.page});
+                            self.pageobj.infourl = "/api/favorites?";
 
-                        favquery.done(function (data) {
-                            for (let i = 0; i < self.items.length; i++) {
-                                self.items[i].favorite = data.results[i];
-                                if (self.items[i].favorite === 1) {
-                                    var newitem = self.items[i];
-                                    newitem.favstyle = {color: 'red'};
-                                    Vue.set(self.items, i, newitem);
+                        {% else %}
+                            var url = "/api/today?" + $.param({
+                                date: this.date,
+                                page: this.page
+                            });
+                            self.pageobj.infourl = "/api/today?date=" + this.date + "&";
+                        {% endif %}
+                        self.pageobj.post = false;
+                        var jsdt = $.getJSON(url);
+                        return jsdt
+                    },
+
+                    showpage: function (queryPromise) {
+                        var self = this;
+                        self.ready = true;
+                        queryPromise.done(function (data) {
+                            self.items = data.results.items;
+                            self.pageobj.page = data.results['page'];
+                            self.pageobj.hasprev = data.results['has_prev'];
+                            self.pageobj.hasnext = data.results['has_next'];
+                            // if(self.pageobj.hasnext){console.log("true for next")};
+                            if (self.items.length > 0) {
+                                self.ready = false;
+                                var pid_list = [];
+                                for (let i = 0; i < self.items.length; i++) {
+                                    pid_list.push(self.items[i].pid);
+
                                 }
-                                else {
-                                    var newitem = self.items[i];
-                                    newitem.favstyle = {color: 'black'};
-                                    Vue.set(self.items, i, newitem);
-                                }
+                                self.$nextTick(function () {
+                                    if (window.MathJax) {
+                                        console.log('rendering mathjax');
+                                        window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+                                    }
+                                });
 
+                                {% if current_user.is_authenticated %}
+
+                                    var favquery = $.postJSON("/api/favorites", {id: pid_list});
+
+                                    favquery.done(function (data) {
+                                        for (let i = 0; i < self.items.length; i++) {
+                                            self.items[i].favorite = data.results[i];
+                                            if (self.items[i].favorite === 1) {
+                                                var newitem = self.items[i];
+                                                newitem.favstyle = {color: 'red'};
+                                                Vue.set(self.items, i, newitem);
+                                            }
+                                            else {
+                                                var newitem = self.items[i];
+                                                newitem.favstyle = {color: 'black'};
+                                                Vue.set(self.items, i, newitem);
+                                            }
+
+                                        }
+                                    });
+                                    favquery.fail(function () {
+                                        console.log("something went wrong");
+                                    });
+                                {% endif %}
+                            }
+                            else {
+                                self.title = "No paper here";
+                                {% if favlist %}
+                                    self.comment = "You have no favorite paper yet.";
+                                {% else %}
+                                    self.comment = "Maybe you want to add more keywords and fileds of your interest.";
+                                {% endif %}
                             }
                         });
-                        favquery.fail(function () {
-                            console.log("something went wrong");
-                        })
-                        {% endif %}
+
+
+                    },
+
+                    authorlist: function (author, event) {
+                        var self = this;
+                        self.comment = "trying to find the paper with author "+author;
+                        event.preventDefault();
+                        var r = $.postJSON("/api/query", {"authors": [author]});
+                        self.pageobj.page = "1";
+                        self.pageobj.infourl = "/api/query?";
+                        self.pageobj.post = {"authors": [author]};
+                        this.showpage(r);
+                    },
+
+                    keywordlist: function (keyword, event) {
+                        var self = this;
+                        self.comment = "trying to find the paper with keyword "+keyword[0];
+                        event.preventDefault();
+                        var r = $.postJSON("/api/query", {"keywords": [keyword[0]]});
+                        self.pageobj.page = "1";
+                        this.showpage(r);
+                        self.pageobj.infourl = "/api/query?";
+                        self.pageobj.post = {"keywords": [keyword[0]]};
+                    },
+
+                    querylist: function (url, post, page) {
+                        var self = this;
+                        var r;
+                        if (post) {
+                            r = $.postJSON(url + "page=" + page, post);
+                        }
+                        else {
+                            r = $.getJSON(url + "page=" + page);
+                        }
+                        self.showpage(r);
+                    },
+
+                    gopage: function (num) {
+                        this.pageobj.page = (parseInt(this.pageobj.page) + num).toString();
+                        this.querylist(this.pageobj.infourl, this.pageobj.post, this.pageobj.page);
+                        window.scroll(0, 0);
+
                     }
-                    else {
-                        self.title = "No paper here";
-                        {% if favlist %}
-                        self.comment = "You have no favorite paper yet.";
-                        {% else %}
-                        self.comment = "Maybe you want to add more keywords and fileds of your interest.";
-                        {% endif %}
-                    }
-                });
+                },
+                created: function () {
+                    var query = this.getpage();
+                    this.showpage(query);
 
+                }
+            })
+        });
 
-            }
-        })
-    });
-
-</script>
+    </script>
 {% endblock %}
 
 
 {% block content %}
 
-<div class="paper-box" id="pl">
-    <div v-if="ready" class="uk-card uk-card-default uk-card-body">
-        <h3 class="uk-card-title" v-text="title"></h3>
-        <p v-text="comment"></p>
-    </div>
+    <div class="paper-box" id="pl">
+        <div v-if="ready" class="uk-card uk-card-default uk-card-body">
+            <h3 class="uk-card-title" v-text="title"></h3>
+            <p v-text="comment"></p>
+        </div>
 
-    <ul class="uk-list uk-list-large uk-list-striped">
-        <li v-for="(item, index) in items">
-            <h3 class="uk-heading-bullet"><a class="uk-margin-right" :href="'/paper/'+item['arxiv_id']">
-                <% item['arxiv_id'] %>
-            </a>
-                <a uk-icon="heart" v-bind:style="item.favstyle" v-on:click="favorite(index, $event)"></a></h3>
-            <template v-for="k in item['keyword']">
-                <a class="uk-button uk-button-default" :href='"/?keyword="+k[0]'><% k[0] %></a>
-            </template>
-            <h3> <% item.title %></h3>
-            <div class="uk-margin-top">
-                <template v-for="(a, index) in item['authors']">
-                    <a href="#"><% a %> </a><span v-if="index+1 < item['authors'].length">,  </span>
+        <ul class="uk-list uk-list-large uk-list-striped">
+            <li v-for="(item, index) in items">
+                <h3 class="uk-heading-bullet"><a class="uk-margin-right" :href="'/paper/'+item['arxiv_id']">
+                    <% item['arxiv_id'] %>
+                </a>
+                    <a uk-icon="heart" v-bind:style="item.favstyle" v-on:click="favorite(index, $event)"></a></h3>
+                <template v-for="k in item['keyword']">
+                    <a class="uk-button uk-button-default" href='#' v-on:click="keywordlist(k, $event)"><% k[0] %></a>
                 </template>
-            </div>
+                <h3> <% item.title %></h3>
+                <div class="uk-margin-top">
+                    <template v-for="(a, index) in item['authors']">
+                        <a href="#" v-on:click="authorlist(a, $event)"><% a %> </a><span
+                            v-if="index+1 < item['authors'].length">,  </span>
+                    </template>
+                </div>
 
-            <p> <% item.summary %></p>
-        </li>
-    </ul>
-    <paginate v-bind="pageobj"></paginate>
-</div>
+                <p> <% item.summary %></p>
+            </li>
+        </ul>
+        <paginate v-bind="pageobj" v-on:gopage="gopage"></paginate>
+    </div>
 {% endblock %}

@@ -42,7 +42,7 @@ def test_favorite_get(client, auth):
         assert len(r.json.get('results').get('items')) == 1
 
 
-def test_correct_query(client, auth):
+def test_correct_query(cache, client, auth):
     with client:
         r = client.post("/api/query", json={"dates": ["2018-12-17"]})
         assert len(r.json.get('results')['items']) == 3

@@ -14,7 +14,7 @@ def index():
     keyword = request.args.get('keyword', "")
     date = request.args.get('date', "")
     page = request.args.get('page', "") or "1"
-    return render_template("paperlist.html", keyword=keyword, date=date, page=page, favlist=False)
+    return render_template("paperlist.html", date=date, page=page, favlist=False)
 
 
 @paperview.route('/paper/<arxivid>')

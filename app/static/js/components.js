@@ -1,29 +1,21 @@
 Vue.component('paginate', {
     props: ['hasprev', 'hasnext', 'page'],
-    data: function () {
-        function param(name) {
-            return (location.search.split(name + '=')[1] || '').split('&')[0];
-        }
 
-        var page = param("page");
-        var date = param("date");
-        var nextpage = (Number(page) + 1).toString();
-        var prevpage = (Number(page) - 1).toString();
-        var urlbase = window.location.pathname + "?";
-        return {
-            nexturl: urlbase + $.param({"page": nextpage, "date": date}),
-            prevurl: urlbase + $.param({"page": prevpage, "date": date})
+    methods: {
+        changepage: function(num, event){
+            event.preventDefault();
+            this.$emit('gopage', num);
         }
     },
-    methods: {},
     template: `
 <div class="uk-margin-top">
 <ul class="uk-pagination">
-    <li v-if="hasprev" class="uk-margin-auto-right"><a :href="prevurl"><span class="uk-margin-small-right" uk-pagination-previous></span> Previous</a></li>
+    <li v-if="hasprev" class="uk-margin-auto-right"><a href="" v-on:click="changepage(-1, $event)"><span class="uk-margin-small-right" uk-pagination-previous></span> Previous</a></li>
     <li v-else class="uk-margin-auto-right"><span class="uk-margin-small-left uk-disabled"></span> </li>
 
-    <li class="uk-margin-auto-left uk-margin-auto-right"><a href="#" uk-scroll>ToTop</a></li>
-    <li v-if="hasnext" class="uk-margin-auto-left" ><a :href="nexturl">Next<span class="uk-margin-small-left" uk-pagination-next></span></a></li>
+    <li class="uk-margin-auto-left uk-margin-auto-right"><a href="" uk-scroll v-text=" 'ToTop (Page '+page+')' "></a></li>
+    
+    <li v-if="hasnext" class="uk-margin-auto-left" ><a href="" v-on:click="changepage(1, $event)">Next<span class="uk-margin-small-left" uk-pagination-next></span></a></li>
     <li v-else class="uk-margin-auto-left"><span class="uk-margin-small-right uk-disabled"></span> </li>
 
 </ul>
