@@ -35,12 +35,20 @@ def api_registration():
 def api_login():
     current_app.logger.info("get request for login %s" % request.form)
     form = LoginForm(request.form)
-    current_app.logger.info("email %s, password %s" % (form.email.data, form.password.data))
+    current_app.logger.info("email %s, password %s***" % (form.email.data, form.password.data[:2]))
     u = User.query.filter_by(email=form.email.data).first()
     if not form.validate():
         raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
     if not u:
         raise InvalidInput(message="The password or email is in correct")
+
+    tries = cache.get("uid_login" + u.email)
+    if tries:
+        if tries > 5:
+            current_app.logger.info("exceed the max tried of wrong login for user %s"%u.id)
+            raise InvalidInput(message="Please wait for 5 minutes to try again")
+    else:
+        tries = 0
 
     if u.checkpass(form.password.data, current_app.config['PASSWORD_SALT']):
         current_app.logger.info("successfully login!")
@@ -48,12 +56,14 @@ def api_login():
         return jsonify({'message': "successfully login",
                         'state': 'success'})
 
-    raise InvalidInput(message="The password or email is in correct")
+    current_app.logger.info("count the tries of invalid password: %s times" % (tries + 1))
+    cache.set("uid_login" + u.email, tries + 1, 5 * 60)
+    raise InvalidInput(message="The password or email is incorrect")
 
 
 @user.route("/api/logout")
 # @login_required
-def api_logout(): # weird combination between view and api?
+def api_logout():  # weird combination between view and api?
     logout_user()
     return redirect("/login")
 
@@ -71,7 +81,8 @@ def api_keywords():
         u = current_user
         try:
             # u.keywords = [Keyword(uid=u.id, keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
-            newrows = [Keyword(uid=u.id, keyword=j['keyword'][:90], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
+            newrows = [Keyword(uid=u.id, keyword=j['keyword'][:90], weight=j['weight']) for j in js if
+                       len(j.get('keyword', "")) > 0]
             oldrows = Keyword.query.filter_by(uid=current_user.id).all()
             for oldrow in oldrows:
                 db.session.delete(oldrow)
@@ -143,7 +154,7 @@ def api_userinfo():
                     "message": "the user info is successfully updated"})
 
 
-@user.route("/api/verify") # better implement in post
+@user.route("/api/verify")  # better implement in post
 @login_required
 def api_verify():
     u = User.query.filter_by(id=current_user.id).first()

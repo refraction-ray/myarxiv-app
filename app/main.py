@@ -19,6 +19,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
     app = Flask(__name__)
     app.config.update(conf)
     if testconf:
+        print("update config based on testconf")
         app.config.update(testconf)
     db.init_app(app)
     if dbcreate is True and app.config.get("DB_CREATE", False):
@@ -53,9 +54,9 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
     return app
 
 
-def create_celery_app(app=None):
-    app = app or create_app(blueprints=False, dbcreate=False)
-    celery = Celery(__name__, broker=app.config['CELERY_BROKER_URL'])
+def create_celery_app(app=None, testconf=None):
+    app = app or create_app(blueprints=False, dbcreate=False, testconf=testconf)
+    celery = Celery(__name__, broker=app.config['BROKER_URL'])
     celery.conf.update(app.config)
     TaskBase = celery.Task
 

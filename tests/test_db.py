@@ -24,7 +24,7 @@ def test_basics(db):
     assert a.pid == 3
 
 
-def test_stateless(db):
+def test_stateless():
     a = Author.query.filter_by(author="Foo Bar").first()
     assert a is None
     a = Author.query.filter_by(id=2).first()

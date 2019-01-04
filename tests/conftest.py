@@ -1,20 +1,21 @@
 import os
 import pytest
-from app.main import create_app
+from app.main import create_app, create_celery_app
 from app.models import db as db_test
 from sqlalchemy import event
 import logging
 import sys
 from app.cache import cache as cache_test
 from app.helper import get_config
-
+from app.tasks import celery as celery_test
 
 testconf = get_config(name="config_test.yaml", override="config_test_override.yaml",
                       path=os.path.dirname(os.path.abspath(__file__)))
 logging.basicConfig(level=getattr(logging, testconf.get('TEST_LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
 
 
-def init_db():
+
+def init_db(db_test):
     prefix = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(prefix, "init.sql"), "r") as sql:
         command = ""
@@ -31,18 +32,34 @@ def init_db():
                         command = ""
 
 
+def drop_db(db_test):
+    prefix = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(prefix, "init.sql"), "r") as sql:
+        for lno, line in enumerate(sql):
+            if line.strip().startswith("DROP TABLE") or lno < 10:
+                line = line.strip()
+                # print(line)
+                db_test.engine.execute(line)
+
+
 @pytest.fixture(scope='session')
 def app():
-
     app = create_app(True, False, testconf=testconf)
-
     with app.app_context():
-        init_db()
+        celery_test.conf.update(app.config)
+        init_db(db_test)
+        cache_test.clear()
         yield app
         cache_test.clear()  # ensure cache is clear in case there is error quit of related test functions
+        connection = db_test.engine.connect()
+        options = dict(bind=connection, binds={})
+        session = db_test.create_scoped_session(options=options)
+        db_test.session = session
+        drop_db(db_test)
+        celery_test.control.purge()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function',autouse=True)
 def db(app):
     connection = db_test.engine.connect()
     transaction = connection.begin()
@@ -61,7 +78,6 @@ def db(app):
             session.expire_all()
             session.begin_nested()
 
-    # db_test.init_app(current_app)
     yield db_test
     session.remove()
     transaction.rollback()
@@ -101,3 +117,5 @@ class AuthActions:
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
+
+

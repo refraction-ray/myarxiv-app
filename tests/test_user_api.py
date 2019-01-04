@@ -3,7 +3,7 @@ from app.security import ts
 from app.models import UserInfo
 
 
-def test_correct_login(client, auth, db):
+def test_correct_login(client, auth):
     with client:
         r = auth.login()
         assert current_user.email == "test@test.com"
@@ -13,14 +13,14 @@ def test_correct_login(client, auth, db):
         assert r.headers['Location'] == 'http://localhost/login'
 
 
-def test_wrong_login(client, auth, db):
+def test_wrong_login(client, auth):
     with client:
         r = auth.login(password="")
         assert r.status_code == 422
         assert r.json.get('message') == "Incorrect input in the form"
         r = auth.login(password="123456")
         assert r.status_code == 422
-        assert r.json.get('message') == "The password or email is in correct"
+        assert r.json.get('message') == "The password or email is incorrect"
         assert current_user.is_authenticated is False
         r = auth.logout()
         assert r.status_code == 302
@@ -29,7 +29,7 @@ def test_wrong_login(client, auth, db):
         assert r.status_code == 302 # logout of no user doesn't lead to problems
 
 
-def test_correct_register(client, auth, db):
+def test_correct_register(client, auth):
     with client:
         r = client.post(
             '/api/registration', data={'name': 'test101', 'email': 'test101@test.com', 'password': 'testtest'})
@@ -39,7 +39,7 @@ def test_correct_register(client, auth, db):
         r = auth.logout()
 
 
-def test_wrong_register(client, auth, db):
+def test_wrong_register(client, auth):
     with client:
         r = auth.login(email='test101@test.com', password='testtest')
         assert current_user.is_authenticated is False
@@ -54,7 +54,7 @@ def test_wrong_register(client, auth, db):
         assert r.json.get('message') == "Incorrect input in the form"
 
 
-def test_keywords_post(client, auth, db):
+def test_keywords_post(client, auth):
     with client:
         auth.login()
         ctoken = ts.dumps(current_user.id)
@@ -71,7 +71,7 @@ def test_keywords_post(client, auth, db):
         assert r.json.get('message') == "The token was expired, please reload the page."
 
 
-def test_keywords_get(client, auth, db):
+def test_keywords_get(client, auth):
     with client:
         auth.login()
         r = client.get('/api/keywords')
@@ -81,7 +81,7 @@ def test_keywords_get(client, auth, db):
         assert r.status_code == 403
 
 
-def test_fields_post(client, auth, db):
+def test_fields_post(client, auth):
     with client:
         auth.login()
         ctoken = ts.dumps(current_user.id)
@@ -124,7 +124,7 @@ def test_userinfo_post(client, auth, db):
         assert r.json.get("dailymail") is False
 
 
-def test_password_reset(client, auth, db):
+def test_password_reset(client):
     with client:
         r = client.post("/api/password/reset", data={"email": "test@test.net"})
         assert r.json.get('message') == "No user use this email address"
@@ -146,7 +146,7 @@ def test_password_edit(client, auth, db):
                                                     "email": "test@test.com", "password": "123456"})
         assert r.json.get('message') == "the password is successfully changed"
 
-def test_nochange_password(client, auth, db):
+def test_nochange_password(client, auth):
     with client:
         auth.login()
         assert current_user.id == 1

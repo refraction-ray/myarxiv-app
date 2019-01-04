@@ -6,6 +6,7 @@ from .analysisbackend.paperls import Paperls
 from .conf import conf
 from .security import ts
 
+
 def jsonfrom(ps):
     l = []
     for p in ps:
@@ -29,7 +30,8 @@ def jsonwithkw(json, kwdict):
     lst = Paperls(search_mode=0)
     lst.contents = json
     lst.interest_match(kwdict)
-    res = [p for p in lst.contents if p.get('keyword', None)]
+    # res = [p for p in lst.contents if p.get('keyword', None)]
+    res = sorted([c for c in lst.contents if c.get('keyword', None)], key=lambda s: s['weight'], reverse=True)
     return res
 
 
@@ -57,14 +59,14 @@ def recover_subject(subject_abbr):
     except KeyError:
         pass
 
-def ctokenize(uid): # can be registered as jinja2 filter
+
+def ctokenize(uid):  # can be registered as jinja filters
     return ts.dumps(uid)
 
 
 def get_gravatar_url(email):
     gravatar_url = "https://www.gravatar.com/avatar/" + md5(email.lower().encode('utf8')).hexdigest()
-    return gravatar_url+"?d="+conf["GRAVATA_IMAGE_DEFAULT"]
-
+    return gravatar_url + "?d=" + conf["GRAVATA_IMAGE_DEFAULT"]
 
 
 def hashpass(user, pw, salt):
@@ -139,7 +141,7 @@ class get_page:
     dict = __repr__
 
 
-def pagetodict(pgobj): # pageobj defined in flask_sqlalchemy
+def pagetodict(pgobj):  # pageobj defined in flask_sqlalchemy
     return {"has_prev": pgobj.has_prev,
             "has_next": pgobj.has_next, "prev_num": pgobj.prev_num,
             "next_num": pgobj.next_num, "page": pgobj.page, "nums": pgobj.per_page,

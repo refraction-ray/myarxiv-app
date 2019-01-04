@@ -38,7 +38,7 @@ def register_blueprints(app, package_name, package_path):
     :param package_path: the package path
     """
     rv = []
-    blacklist = ["wsgi", "dbinit"]
+    blacklist = ["wsgi", "dbinit", "tasks"]
     for _, name, _ in pkgutil.iter_modules([package_path]):
         if name not in blacklist:
             m = importlib.import_module('%s.%s' % (package_name, name))
