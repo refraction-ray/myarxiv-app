@@ -1,18 +1,19 @@
 import os
 import pytest
-from app.main import create_app, create_celery_app
-from app.models import db as db_test
-from sqlalchemy import event
 import logging
 import sys
+from sqlalchemy import event
+
+from app.main import create_app
+from app.models import db as db_test
 from app.cache import cache as cache_test
 from app.helper import get_config
 from app.tasks import celery as celery_test
 
 testconf = get_config(name="config_test.yaml", override="config_test_override.yaml",
                       path=os.path.dirname(os.path.abspath(__file__)))
-logging.basicConfig(level=getattr(logging, testconf.get('TEST_LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
 
+logging.basicConfig(level=getattr(logging, testconf.get('TEST_LOGGING_LEVEL', 'WARNING'), None), stream=sys.stdout)
 
 
 def init_db(db_test):
@@ -59,7 +60,7 @@ def app():
         celery_test.control.purge()
 
 
-@pytest.fixture(scope='function',autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def db(app):
     connection = db_test.engine.connect()
     transaction = connection.begin()
@@ -117,5 +118,3 @@ class AuthActions:
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
-
-
