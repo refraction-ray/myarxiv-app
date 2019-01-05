@@ -13,8 +13,9 @@
                     comment: "Please wait for several seconds to see today's highlight only for you",
                     items: [],
                     date: "{{date}}",
-                    page:  "{{page}}",
-                    pageobj: {}
+                    page: "{{page}}",
+                    pageobj: {},
+                    fav: {% if favlist %} true {% else %} false {% endif %}
 
                 },
                 methods: {
@@ -46,17 +47,17 @@
 
                     getpage: function () {
                         var self = this;
-                        {% if favlist %}
+                        if (self.fav) {
                             var url = "/api/favorites?" + $.param({page: this.page});
                             self.pageobj.infourl = "/api/favorites?";
-
-                        {% else %}
+                        }
+                        else {
                             var url = "/api/today?" + $.param({
                                 date: this.date,
                                 page: this.page
                             });
                             self.pageobj.infourl = "/api/today?date=" + this.date + "&";
-                        {% endif %}
+                        }
                         self.pageobj.post = false;
                         var jsdt = $.getJSON(url);
                         return jsdt
@@ -112,11 +113,12 @@
                             }
                             else {
                                 self.title = "No paper here";
-                                {% if favlist %}
+                                if (self.fav) {
                                     self.comment = "You have no favorite paper yet.";
-                                {% else %}
+                                }
+                                else {
                                     self.comment = "Maybe you want to add more keywords and fileds of your interest.";
-                                {% endif %}
+                                }
                             }
                         });
 
@@ -125,7 +127,7 @@
 
                     authorlist: function (author, event) {
                         var self = this;
-                        self.comment = "trying to find the paper with author "+author;
+                        self.comment = "trying to find the paper with author " + author;
                         event.preventDefault();
                         var r = $.postJSON("/api/query", {"authors": [author]});
                         self.pageobj.page = "1";
@@ -136,7 +138,7 @@
 
                     keywordlist: function (keyword, event) {
                         var self = this;
-                        self.comment = "trying to find the paper with keyword "+keyword[0];
+                        self.comment = "trying to find the paper with keyword " + keyword[0];
                         event.preventDefault();
                         var r = $.postJSON("/api/query", {"keywords": [keyword[0]]});
                         self.pageobj.page = "1";

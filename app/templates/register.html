@@ -38,6 +38,12 @@
 
                         url = "/api/registration"
                     }
+                    if (this.password.length < 6) {
+                        warn.message = "the password is less than 6 digits";
+                        warn.issuccess = false;
+                        warn.seen = true;
+                        return ;
+                    }
                     var sub = $.post(url, {
                         name: $.trim(this.name),
                         email: this.email,

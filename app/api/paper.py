@@ -277,3 +277,9 @@ def valid_paper(taskid):
     else:
         response = {'state': task.get()}
     return jsonify(response)
+
+
+# @paper.route('/api/test', methods=['GET', 'POST'])
+# def api_test():
+#     r = request.form.getlist("a")
+#     return jsonify({"a": r})

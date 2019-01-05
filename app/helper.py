@@ -24,9 +24,12 @@ def get_config(name=None, override=None, path=None):
     with open(os.path.join(dirpath, name), 'r') as conffile:
         conf = load(conffile, Loader=Loader)
     if override:
-        with open(os.path.join(dirpath, override), "r") as conffile:
-            confo = load(conffile, Loader=Loader)
-        conf.update(confo)
+        try:
+            with open(os.path.join(dirpath, override), "r") as conffile:
+                confo = load(conffile, Loader=Loader)
+            conf.update(confo)
+        except FileNotFoundError:
+            pass
     return conf
 
 
