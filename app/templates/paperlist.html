@@ -8,14 +8,20 @@
                 el: '#pl',
                 delimiters: ["<%", "%>"],
                 data: {
-                    ready: true,
-                    title: "Coming Soon...",
-                    comment: "Please wait for several seconds to see today's highlight only for you",
+                    board: {
+                        ready: true,
+                        title: "Coming Soon...",
+                        comment: "Please wait for several seconds to see today's highlight only for you"
+                    },
                     items: [],
                     date: "{{date}}",
                     page: "{{page}}",
                     pageobj: {},
-                    fav: {% if favlist %} true {% else %} false {% endif %}
+                    searchobj: {sdates: null},
+                    issearch: false,
+                    navs: [{name: "today"}, {name: "recent"}, {name: "favorites"}, {name: "search"}],
+                    active: 0,
+                    login: {% if current_user.is_authenticated %} true {% else %} false {% endif %}
 
                 },
                 methods: {
@@ -47,17 +53,20 @@
 
                     getpage: function () {
                         var self = this;
-                        if (self.fav) {
-                            var url = "/api/favorites?" + $.param({page: this.page});
-                            self.pageobj.infourl = "/api/favorites?";
-                        }
-                        else {
-                            var url = "/api/today?" + $.param({
-                                date: this.date,
-                                page: this.page
-                            });
-                            self.pageobj.infourl = "/api/today?date=" + this.date + "&";
-                        }
+                        var url = "/api/today?" + $.param({
+                            date: this.date,
+                            page: this.page
+                        });
+                        self.pageobj.infourl = "/api/today?date=" + this.date + "&";
+                        self.pageobj.post = false;
+                        var jsdt = $.getJSON(url);
+                        return jsdt
+                    },
+
+                    getfavpage: function () {
+                        var self = this;
+                        var url = "/api/favorites?";
+                        self.pageobj.infourl = "/api/favorites?";
                         self.pageobj.post = false;
                         var jsdt = $.getJSON(url);
                         return jsdt
@@ -65,15 +74,17 @@
 
                     showpage: function (queryPromise) {
                         var self = this;
-                        self.ready = true;
+                        self.board.title = "Coming soon";
+                        self.board.ready = true;
                         queryPromise.done(function (data) {
                             self.items = data.results.items;
                             self.pageobj.page = data.results['page'];
                             self.pageobj.hasprev = data.results['has_prev'];
                             self.pageobj.hasnext = data.results['has_next'];
+                            self.pageobj.last = data.results['last']
                             // if(self.pageobj.hasnext){console.log("true for next")};
                             if (self.items.length > 0) {
-                                self.ready = false;
+                                self.board.ready = false;
                                 var pid_list = [];
                                 for (let i = 0; i < self.items.length; i++) {
                                     pid_list.push(self.items[i].pid);
@@ -86,7 +97,7 @@
                                     }
                                 });
 
-                                {% if current_user.is_authenticated %}
+                                if (self.login) {
 
                                     var favquery = $.postJSON("/api/favorites", {id: pid_list});
 
@@ -107,44 +118,63 @@
                                         }
                                     });
                                     favquery.fail(function () {
-                                        console.log("something went wrong");
+                                        console.log("something went wrong in favorite querying");
                                     });
-                                {% endif %}
+                                }
                             }
                             else {
-                                self.title = "No paper here";
-                                if (self.fav) {
-                                    self.comment = "You have no favorite paper yet.";
+                                self.board.title = "No paper here";
+                                if (self.pageobj.infourl === "/api/favorites?") {
+                                    self.board.comment = "You have no favorite paper yet.";
                                 }
                                 else {
-                                    self.comment = "Maybe you want to add more keywords and fileds of your interest.";
+                                    self.board.comment = "Maybe you would like to add more keywords and fields of your interest.";
                                 }
                             }
+                        });
+
+                        queryPromise.fail(function (err) {
+                            self.board.ready = true;
+                            self.board.title = "Something not so lucky";
+                            self.board.comment = err.responseJSON.message;
                         });
 
 
                     },
 
+                    getrecpage: function () {
+                        var self = this;
+                        self.board.comment = "trying to find recent paper matching your interest";
+                        now = new Date();
+                        last = new Date(now.getTime() - 10 * 24 * 3600 * 1000);
+                        dates = {
+                            start:$.strftime(last),
+                            end: $.strftime(now)
+                        };
+                        self.pageobj.post = {"default_subjects": true, "default_keywords": true, "dates": dates};
+                        var r = $.postJSON("/api/query", self.pageobj.post);
+                        self.pageobj.infourl = "/api/query?";
+                        return r;
+                    },
+
                     authorlist: function (author, event) {
                         var self = this;
-                        self.comment = "trying to find the paper with author " + author;
+                        self.board.comment = "trying to find the paper with author " + author;
                         event.preventDefault();
-                        var r = $.postJSON("/api/query", {"authors": [author]});
-                        self.pageobj.page = "1";
-                        self.pageobj.infourl = "/api/query?";
                         self.pageobj.post = {"authors": [author]};
+                        var r = $.postJSON("/api/query", self.pageobj.post);
+                        self.pageobj.infourl = "/api/query?";
                         this.showpage(r);
                     },
 
                     keywordlist: function (keyword, event) {
                         var self = this;
-                        self.comment = "trying to find the paper with keyword " + keyword[0];
+                        self.board.comment = "trying to find the paper with keyword " + keyword[0];
                         event.preventDefault();
-                        var r = $.postJSON("/api/query", {"keywords": [keyword[0]]});
-                        self.pageobj.page = "1";
-                        this.showpage(r);
-                        self.pageobj.infourl = "/api/query?";
                         self.pageobj.post = {"keywords": [keyword[0]]};
+                        var r = $.postJSON("/api/query", self.pageobj.post);
+                        self.pageobj.infourl = "/api/query?";
+                        this.showpage(r);
                     },
 
                     querylist: function (url, post, page) {
@@ -164,12 +194,62 @@
                         this.querylist(this.pageobj.infourl, this.pageobj.post, this.pageobj.page);
                         window.scroll(0, 0);
 
+                    },
+
+                    navroute: function (i, event) {
+                        var self = this;
+                        event.preventDefault();
+                        if (i !== 3) {
+                            self.issearch = false;
+                        }
+                        var query;
+                        self.active = i;
+                        if (i === 0) {
+                            query = this.getpage();
+                            this.showpage(query);
+                        }
+                        else if (i === 1) {
+                            query = this.getrecpage();
+                            this.showpage(query)
+
+                        }
+                        else if (i === 2) {
+                            query = this.getfavpage();
+                            this.showpage(query);
+
+                        }
+                        else if (i === 3) {
+                            self.issearch = !self.issearch;
+                        }
+
+                    },
+
+                    search: function (event) {
+                        event.preventDefault();
+                        var self = this;
+                        if (self.searchobj.sdates) {
+                            s = self.searchobj.sdates.start;
+                            self.searchobj.dates = {};
+                            self.searchobj.dates.start = $.strftime(s);
+                            e = self.searchobj.sdates.end;
+                            self.searchobj.dates.end = $.strftime(e);
+                        }
+                        else {
+                            self.searchobj.dates = null;
+                        }
+                        self.board.comment = "trying to find relevant paper based on your conditions";
+                        self.pageobj.post = self.searchobj;
+                        self.pageobj.post.sdates = null;
+                        var query = $.postJSON("/api/query", self.pageobj.post);
+                        self.pageobj.infourl = "/api/query?";
+                        self.showpage(query);
+                        self.issearch = false;
+
                     }
                 },
                 created: function () {
                     var query = this.getpage();
                     this.showpage(query);
-
                 }
             })
         });
@@ -181,19 +261,66 @@
 {% block content %}
 
     <div class="paper-box" id="pl">
-        <div v-if="ready" class="uk-card uk-card-default uk-card-body">
-            <h3 class="uk-card-title" v-text="title"></h3>
-            <p v-text="comment"></p>
+        <div class="uk-flex uk-flex-center uk-flex-middle">
+            <ul class="uk-subnav uk-margin-top uk-subnav-pill">
+                <li v-for="(nav, index) in navs" v-bind:class="{ 'uk-active': index===active }">
+                    <a href="#" v-text="nav.name" v-on:click="navroute(index, $event)"></a>
+                </li>
+            </ul>
         </div>
 
-        <ul class="uk-list uk-list-large uk-list-striped">
+        <refresh-board v-bind="board"></refresh-board>
+
+        <div v-if="issearch" class="uk-card uk-card-body uk-card-body uk-margin-top uk-card-hover">
+            <div class="" uk-margin>
+                <v-date-picker mode='range' v-model='searchobj.sdates'
+                               :input-props='{ class: "uk-input uk-form-width-large", placeholder: "Select announce dates of the papers"}'>
+
+                </v-date-picker>
+            </div>
+            <div class="uk-margin">
+                <input class="uk-input uk-form-width-large" type="text" placeholder="Keywords, separated by comma"
+                       v-model="searchobj.keywords">
+            </div>
+            <div class="uk-margin">
+                <input class="uk-input uk-form-width-large" type="text" placeholder="Subjects, separated by comma"
+                       v-model="searchobj.subjects">
+            </div>
+            <div class="uk-margin">
+                <input class="uk-input uk-form-width-large" type="text" placeholder="Authors, separated by comma"
+                       v-model="searchobj.authors">
+            </div>
+            <div class="uk-margin">
+                <input class="uk-checkbox" type="checkbox" placeholder="Input" v-model="searchobj['default_keywords']">
+                Include default keywords in my
+                profile
+            </div>
+            <div class="uk-margin">
+                <input class="uk-checkbox" type="checkbox" placeholder="Input" v-model="searchobj['default_subjects']">
+                Include default subjects in my
+                profile
+            </div>
+            <div class="uk-margin">
+                <input class="uk-checkbox" type="checkbox" placeholder="Input" v-model="searchobj['favorites']"> Only
+                search in my favorites papers
+            </div>
+            <div class="uk-margin">
+                <button class="uk-button-primary uk-button-large" v-on:click="search">Search Now</button>
+            </div>
+            <div class="uk-margin uk-text-muted"> Note: Blank input implies search for all papers irrespective of
+                corresponding conditions
+            </div>
+        </div>
+
+        <ul class="uk-list uk-list-large uk-list-striped" style="margin-top:0">
             <li v-for="(item, index) in items">
                 <h3 class="uk-heading-bullet"><a class="uk-margin-right" :href="'/paper/'+item['arxiv_id']">
                     <% item['arxiv_id'] %>
                 </a>
                     <a uk-icon="heart" v-bind:style="item.favstyle" v-on:click="favorite(index, $event)"></a></h3>
                 <template v-for="k in item['keyword']">
-                    <a class="uk-button uk-button-default" href='#' v-on:click="keywordlist(k, $event)"><% k[0] %></a>
+                    <a class="uk-button uk-button-default" href='#' v-on:click="keywordlist(k, $event)"><% k[0]
+                        %></a>
                 </template>
                 <h3> <% item.title %></h3>
                 <div class="uk-margin-top">

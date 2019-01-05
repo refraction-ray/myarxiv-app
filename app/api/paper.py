@@ -6,7 +6,7 @@ from sqlalchemy import and_, or_
 
 from ..models import db, Paper, Keyword, Favorite, Interest
 from ..tasks import kwmatch_task, arxiv_query
-from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds
+from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds, str2list
 from ..cache import cache
 from ..exceptions import InvalidInput
 
@@ -135,7 +135,7 @@ def api_query():
     subjects (list), page(int), limit(int, how many items in one page), keywords(list),
     default_keywords (bool, add keywords of the user in the search list)
     default_subjects (bool), favorites(bool, only include favorite paper of the user)
-
+    for authors, keywords and subjects, comma separated string is also supported
     :return:
     """
     r = request.json
@@ -155,16 +155,25 @@ def api_query():
     if c:
         return jsonify({"results": get_page(c, page, nums=limit).dict()})
 
-    dates = r.get('dates', [])
+    dates = r.get('dates', []) or []
     if not dates:
+        dates = []
         for d in range(30):
             dates.append((date.today() - timedelta(days=d)).strftime("%Y-%m-%d"))
+
     try:
-        dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:60]]
+        if isinstance(dates, dict):
+            ds = datetime.strptime(dates.get('start'),"%Y-%m-%d").date()
+            de = datetime.strptime(dates.get('end'), "%Y-%m-%d").date()
+            dates = [ds + timedelta(days=x) for x in range((de-ds).days + 1)][:90]
+        else:
+            dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:90]]
     except (TypeError, ValueError) as e:
         raise InvalidInput(message="invalid form of date strings")
 
-    subjects = r.get('subjects', [])
+    subjects = r.get('subjects', []) or []
+    if isinstance(subjects, str):
+        subjects = str2list(subjects)
     default_subjects = r.get('default_subjects', False)
     try:
         if default_subjects and current_user.is_authenticated:
@@ -183,12 +192,14 @@ def api_query():
         ps = Paper.query.filter(Paper.announce.in_(dates)).all()
 
     favorite = r.get('favorites', False)
-    if favorite:
+    if favorite and current_user.is_authenticated:
         fs = Favorite.query.filter_by(uid=current_user.id).all()
         fs_set = set([f.pid for f in fs])
         ps = [p for p in ps if p.id in fs_set]
 
     authors = r.get('authors', None)
+    if isinstance(authors, str):
+        authors = str2list(authors)
     if authors:
         try:
             authors = set(authors)
@@ -196,7 +207,9 @@ def api_query():
         except (TypeError, ValueError) as e:
             raise InvalidInput(message="invalid form of authors")
 
-    keywords = r.get('keywords', [])
+    keywords = r.get('keywords', []) or []
+    if isinstance(keywords, str):
+        keywords = str2list(keywords)
     default_keywords = r.get('default_keywords', False)
     try:
         if default_keywords and current_user.is_authenticated:
@@ -213,9 +226,9 @@ def api_query():
     jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True)  # maybe add sorted keys option later
 
     if len(jsonrs) > 200:
-        timeout = 60 * 15
+        timeout = 60 * 20
     else:
-        timeout = 60 * 30
+        timeout = 60 * 60
     cache.set(cache_key, jsonrs, timeout)
 
     return jsonify({"results": get_page(jsonrs, page, nums=limit).dict()})
@@ -279,7 +292,12 @@ def valid_paper(taskid):
     return jsonify(response)
 
 
-# @paper.route('/api/test', methods=['GET', 'POST'])
-# def api_test():
-#     r = request.form.getlist("a")
-#     return jsonify({"a": r})
+@paper.route('/api/test', methods=['GET', 'POST'])
+def api_test():
+    # # list of form data
+    # r = request.form.getlist("a")
+    # return jsonify({"a": r})
+    # # process_data of wtforms
+    # form = QueryForm(**request.json)
+    # return jsonify(form.data )
+    pass

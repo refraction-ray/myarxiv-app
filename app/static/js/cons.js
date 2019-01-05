@@ -23,19 +23,25 @@ var field = {
 
 //extend jQuery
 $(function () {
-    $.extend({
-        postJSON: function (url, data) {
-            var query = $.ajax({
-                url: url,
-                data: JSON.stringify(data),
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json"
-            });
-            return query;
+        $.extend({
+            postJSON: function (url, data) {
+                var query = $.ajax({
+                    url: url,
+                    data: JSON.stringify(data),
+                    type: "POST",
+                    dataType: "json",
+                    contentType: "application/json"
+                });
+                return query;
 
-        }
-    });
-});
+            },
+            strftime: function (date) {
+                return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+            }
+        })
+    }
+);
+
+
 
 

@@ -30,7 +30,6 @@ def jsonwithkw(json, kwdict):  # json is the return form jsonfromps
     lst = Paperls(search_mode=0)
     lst.contents = json
     lst.interest_match(kwdict)
-    # res = [p for p in lst.contents if p.get('keyword', None)]
     res = sorted([c for c in lst.contents if c.get('keyword', None)], key=lambda s: s['weight'], reverse=True)
     return res
 
@@ -74,9 +73,8 @@ def hashpass(user, pw, salt):
     return sha1(pw.encode('utf-8')).hexdigest()
 
 
-def generate_backend_pass(user, pw, salt):
-    pw = sha1(pw.endcoe('utf-8')).hexdigest()
-    return hashpass(user, pw, salt)
+def str2list(s, minl=3):
+    return [r.strip() for r in list(s.split(",")) if len(r.strip()) > minl]
 
 
 def timeoutseconds():

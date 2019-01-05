@@ -11,7 +11,7 @@
 <nav class="uk-navbar-container" style="height:50px" uk-navbar>
     <div class="uk-navbar-left">
         <ul class="uk-navbar-nav">
-            <li class="uk-margin-left"><a href="/">Homepage</a></li>
+        <li class="uk-margin-left"><a href="/">Home</a></li>
         </ul>
     </div>
     <div class="uk-navbar-right">
@@ -20,13 +20,12 @@
                 <li class="uk-margin-right"><a href="#">{{ current_user.name }}</a>
                     <div class="uk-navbar-dropdown">
                         <ul class="uk-nav uk-navbar-dropdown-nav">
-                            <li><a href="/favorites">My Favorites</a></li>
                             <li><a href="/settings/keywords">Edit Keywords</a></li>
                             <li><a href="/settings/userinfo">Edit Profiles</a></li>
                             <hr>
-                            <li><a href="/api/logout">Log Out</a>
+                            <li><a href="/api/logout">Log Out</a></li>
                         </ul>
-                    </div>
+                    </div></li>
 
                     {% else %}
 
@@ -36,7 +35,7 @@
                         <li><a href="/register">Sign Up</a></li>
 
                     </ul>
-                </div>
+                </div></li>
             {% endif %}
         </ul>
     </div>

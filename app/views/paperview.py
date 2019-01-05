@@ -11,10 +11,9 @@ paperview = Blueprint('paperview', __name__)
 
 @paperview.route('/')
 def index():
-    keyword = request.args.get('keyword', "")
     date = request.args.get('date', "")
     page = request.args.get('page', "") or "1"
-    return render_template("paperlist.html", date=date, page=page, favlist=False)
+    return render_template("paperlist.html", date=date, page=page)
 
 
 @paperview.route('/paper/<arxivid>')
@@ -27,9 +26,10 @@ def paperbyid(arxivid):
     p.pdfurl = get_pdf_url(p.arxivurl)
     return render_template("paperitem.html", p=p)
 
-
+"""
 @paperview.route('/favorites')
 @login_required
 def favorites():
     page = request.args.get('page', "") or "1"
-    return render_template("paperlist.html", page=page, favlist=True)
+    return render_template("paperlist.html", page=page, favlist=True, paperlist=True)
+"""

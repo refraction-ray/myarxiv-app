@@ -24,7 +24,7 @@ p.id {
 
 a{
     text-decoration: none;
-    color: rgba(66, 10, 255, 0.85)
+    /*color: rgba(66, 10, 255, 0.85)*/
 }
 
 a:visited{
