@@ -1,5 +1,5 @@
 from flask_login import current_user
-from app.security import ts
+from app.security import ts, tscf
 from app.models import UserInfo
 
 
@@ -57,11 +57,16 @@ def test_wrong_register(client, auth):
 def test_keywords_post(client, auth):
     with client:
         auth.login()
-        ctoken = ts.dumps(current_user.id)
+        ctoken = tscf.dumps(current_user.id)
+        ctoken_wrong = ts.dumps(current_user.id)
         r = client.post("/api/keywords",
                         json={"ctoken": ctoken, "items":
                             [{"keyword": "quantum computation", "weight": 10}]})
         assert r.json.get('state') == "success"
+        r = client.post("/api/keywords",
+                        json={"ctoken": ctoken_wrong, "items":
+                            [{"keyword": "quantum computation", "weight": 10}]})
+        assert r.json.get('message') == "The token was expired, please reload the page."
         r = client.get('/api/keywords')
         assert r.json.get("results")[0]['weight'] == 10
         assert len(r.json.get("results")) == 1
@@ -84,7 +89,7 @@ def test_keywords_get(client, auth):
 def test_fields_post(client, auth):
     with client:
         auth.login()
-        ctoken = ts.dumps(current_user.id)
+        ctoken = tscf.dumps(current_user.id)
         r = client.get("/api/fields")
         assert r.json.get("quant-ph") is True
         r = client.post("/api/fields", json={
@@ -102,7 +107,7 @@ def test_fields_post(client, auth):
 def test_userinfo_post(client, auth, db):
     with client:
         auth.login()
-        ctoken = ts.dumps(current_user.id)
+        ctoken = tscf.dumps(current_user.id)
         r = client.post("/api/userinfo", data={"dailymail": True})
         r = client.post("/api/userinfo", data={"ctoken": ctoken, "dailymail": True})
         assert r.json.get("message") == "Incorrect input in the form"
@@ -135,7 +140,7 @@ def test_password_reset(client):
 def test_password_edit(client, auth, db):
     with client:
         auth.login()
-        ctoken = ts.dumps(current_user.id)
+        ctoken = tscf.dumps(current_user.id)
         r = client.post("/api/password/edit", data={ "ctoken": ctoken,
             "email": "test@test.com", "password": "123456"})
         assert r.json.get('message') == "Don't try to do something weird"

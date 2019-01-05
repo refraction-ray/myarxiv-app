@@ -4,7 +4,6 @@ from ..models import User, db, UserInfo
 from ..exceptions import *
 from ..forms import RegistrationForm, LoginForm
 from flask_login import current_user, login_required
-from ..security import ts
 from flask_login import login_user
 from itsdangerous import BadData
 
@@ -39,13 +38,13 @@ def login():
 @userview.route('/settings/keywords')
 @login_required
 def settings_keywords():
-    return render_template("keywords.html", token=ts.dumps(current_user.id))
+    return render_template("keywords.html", token=current_user.id)
 
 
 @userview.route('/settings/userinfo')
 @login_required
 def settings_userinfo():
-    return render_template("userinfo.html", token=ts.dumps(current_user.id))
+    return render_template("userinfo.html", token=current_user.id)
 
 
 @userview.route("/confirm/<token>")
@@ -77,4 +76,4 @@ def reset_token(token):
     u = User.query.filter_by(email=email).first_or_404()
     login_user(u)
 
-    return render_template("passwordreset.html", before=False, email=email, token=ts.dumps(current_user.id))
+    return render_template("passwordreset.html", before=False, email=email, token=current_user.id)

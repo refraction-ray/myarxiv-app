@@ -27,7 +27,7 @@
                             imgurl: self.imgurl,
                             dailymail: self.dailymail,
                             profile: self.profile,
-                            ctoken: "{{token}}"
+                            ctoken: "{{token|ctokenize}}"
                         });
                         postform.done(function (data) {
                             self.message = data.message;

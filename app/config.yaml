@@ -9,6 +9,7 @@ MYSQL_DATABASE_CHARSET: utf8mb4
 SQLALCHEMY_ECHO: false
 CELERY_TIMEZONE: Asia/Shanghai
 JINJA_FILTERS:
+  - ctokenize
   - recover_subject
   - get_subject_url
 MAIL_SENDER: noreply@example.com

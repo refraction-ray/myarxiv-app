@@ -35,9 +35,10 @@ class PermissionDenied(AppAPIError):
 
 appmessage = {
     "mail_check": """
-                    If you cannot find the mail, you should check junk mails.\n
-                    Please make sure the mail address is our official address %s.
-                    """ % maildict['sender'],
+    If you cannot find the mail, you should check junk mails.\n
+    Please make sure the mail address is our official address %s.
+    """ % maildict['sender'],
+
     "mail_start": """
     This is the mail from %s.\n
     """ % conf['MAIL_ABS_PATH']

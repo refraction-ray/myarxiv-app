@@ -67,14 +67,14 @@
                         event.preventDefault();
                         $.ajax({
                             url: "/api/keywords",
-                            data: JSON.stringify({ctoken: "{{ token }}", items: this.items}),
+                            data: JSON.stringify({ctoken: "{{ token|ctokenize }}", items: this.items}),
                             type: "POST",
                             contentType: "application/json"
                         }).done(function (data) {
                             self.message = data.message;
                             $.ajax({
                                 url: "/api/fields",
-                                data: JSON.stringify({ctoken: "{{ token }}", fields: self.fields}),
+                                data: JSON.stringify({ctoken: "{{ token|ctokenize }}", fields: self.fields}),
                                 type: "POST",
                                 contentType: "application/json"
                             }).done(function (data) {

@@ -1,10 +1,11 @@
 import re
 from hashlib import sha1, md5
 from datetime import datetime
+
 from .analysisbackend.cons import category
 from .analysisbackend.paperls import Paperls
 from .conf import conf
-from .security import ts
+from .security import tscf
 
 
 def jsonfrom(ps):  # ps is the list by Paper model
@@ -60,7 +61,7 @@ def recover_subject(subject_abbr):
 
 
 def ctokenize(uid):  # can be registered as jinja filters
-    return ts.dumps(uid)
+    return tscf.dumps(uid)
 
 
 def get_gravatar_url(email):
