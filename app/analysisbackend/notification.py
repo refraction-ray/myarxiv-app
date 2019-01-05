@@ -76,7 +76,7 @@ def sendmail(sender, sender_alias, password, server, port, user, user_alias, tit
     :param content: string, the content of the email
     :return: boolen, true for success sending
     '''
-    ret = True
+    ret = (True, None)
     try:
         msg = MIMEText(content, 'html', 'utf-8')
         msg['From'] = formataddr([sender_alias, sender])
@@ -87,6 +87,6 @@ def sendmail(sender, sender_alias, password, server, port, user, user_alias, tit
         server.login(sender, password)
         server.sendmail(sender, [user], msg.as_string())
         server.quit()
-    except Exception:
-        ret = False
+    except Exception as e:
+        ret = (False, e)
     return ret

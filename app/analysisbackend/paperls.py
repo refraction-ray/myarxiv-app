@@ -117,7 +117,7 @@ class Paperls:
             maildict['content'] = makemailcontent(headline, rs)
             maildict['title'] = 'Report on highlight of arXiv'
             ret = sendmail(**maildict)
-            if not ret:
+            if not ret[0]:
                 raise arxivException('mail sending failed')
 
     def __iter__(self):

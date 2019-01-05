@@ -225,8 +225,8 @@ def api_query():
 
     jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True)  # maybe add sorted keys option later
 
-    if len(jsonrs) > 200:
-        timeout = 60 * 20
+    if len(jsonrs) > 300:
+        timeout = 60 * 10
     else:
         timeout = 60 * 60
     cache.set(cache_key, jsonrs, timeout)

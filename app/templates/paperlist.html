@@ -21,6 +21,8 @@
                     issearch: false,
                     navs: [{name: "today"}, {name: "recent"}, {name: "favorites"}, {name: "search"}],
                     active: 0,
+                    isnote: false,
+                    notebt: "Show Tips",
                     login: {% if current_user.is_authenticated %} true {% else %} false {% endif %}
 
                 },
@@ -148,7 +150,7 @@
                         now = new Date();
                         last = new Date(now.getTime() - 10 * 24 * 3600 * 1000);
                         dates = {
-                            start:$.strftime(last),
+                            start: $.strftime(last),
                             end: $.strftime(now)
                         };
                         self.pageobj.post = {"default_subjects": true, "default_keywords": true, "dates": dates};
@@ -227,6 +229,7 @@
                     search: function (event) {
                         event.preventDefault();
                         var self = this;
+                        self.board.ready = false;
                         if (self.searchobj.sdates) {
                             s = self.searchobj.sdates.start;
                             self.searchobj.dates = {};
@@ -245,6 +248,17 @@
                         self.showpage(query);
                         self.issearch = false;
 
+                    },
+
+                    note: function (event) {
+                        event.preventDefault();
+                        this.isnote = !this.isnote;
+                        if (!this.isnote) {
+                            this.notebt = "Show Tips";
+                        }
+                        else {
+                            this.notebt = "Omit Tips";
+                        }
                     }
                 },
                 created: function () {
@@ -306,9 +320,14 @@
             </div>
             <div class="uk-margin">
                 <button class="uk-button-primary uk-button-large" v-on:click="search">Search Now</button>
+                <button class="uk-button-default uk-button-large uk-margin-left" v-on:click="note"
+                        v-text="notebt"></button>
             </div>
-            <div class="uk-margin uk-text-muted"> Note: Blank input implies search for all papers irrespective of
-                corresponding conditions
+            <div v-if="isnote" class="uk-margin uk-text-muted"><p>Note: Blank input implies search for all papers
+                irrespective of
+                corresponding conditions.</p>
+                <p>The author name must be the full name. If you want to search someone's paper by part of the name,
+                    we suggest using the name as keywords instead of authors</p>
             </div>
         </div>
 

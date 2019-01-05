@@ -15,18 +15,22 @@ from .analysisbackend.paperls import Paperls, kw_lst2dict
 from .analysisbackend.notification import sendmail
 from .conf import maildict, conf
 from .cache import cache
+from .exceptions import appmessage
 
 celery = create_celery_app()
 
 
-def email_limit(func):  # decorator to limit the frequency of email to the same recipient
-    @wraps(func)
-    def decorator(*args, **kw):
-        if cache.get(str(args) + func.__name__):
-            current_app.logger.info("The email frequency is too high")
-            return
-        cache.set(str(args) + func.__name__, 1, 60 * 2)
-        return func(*args, **kw)
+def email_limit(minutes=3):  # decorator to limit the frequency of email to the same recipient
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kw):
+            if cache.get(str(args) + func.__name__):
+                current_app.logger.info("The email frequency is too high")
+                return
+            cache.set(str(args) + func.__name__, 1, 60 * minutes)
+            return func(*args, **kw)
+
+        return wrapper
 
     return decorator
 
@@ -95,7 +99,7 @@ def paper_into_db(ps, backup=True):
                         elif counte == 1:
                             count += 1
 
-    current_app.logger.info("%s papers are written into database"%count)
+    current_app.logger.info("%s papers are written into database" % count)
     return count
 
 
@@ -146,26 +150,32 @@ def digestion_mail():
 
 
 @celery.task
-@email_limit
+@email_limit(minutes=3)
 def verify_task(email, name):
     token = ts.dumps(email)
     confirm_url = current_app.config["MAIL_ABS_PATH"] + "confirm/" + token
 
     maildict.update({'user': email, 'user_alias': name,
-                     'title': "Verify your email address",
-                     'content': "Please click the following address %s to verify your account at our website" % confirm_url})
+                     'title': "Confirm email from myarxiv.club",
+                     'content': appmessage['mail_start'] +
+                                "Please use the following address to verify your account at our website.\n [ %s ]" % confirm_url})
 
-    sendmail(**maildict)
+    r = sendmail(**maildict)
+    if not r[0]:
+        current_app.logger.warning("the verified mail failed to sent to %s!, the error is" % (email, r[1].message))
 
 
 @celery.task
-@email_limit
+@email_limit(minutes=2)
 def reset_password_task(email, name):
     token = ts.dumps(email)
     reset_url = current_app.config["MAIL_ABS_PATH"] + "reset/" + token
 
     maildict.update({'user': email, 'user_alias': name,
                      'title': "Link to reset your password",
-                     'content': "Please click the following address %s to reset your password" % reset_url})
+                     'content': appmessage['mail_start'] +
+                                "Please use the following address to reset your password.\n [ %s ]" % reset_url})
 
-    sendmail(**maildict)
+    r = sendmail(**maildict)
+    if not r[0]:
+        current_app.logger.warning("the verified mail failed to sent to %s!, the error is" % (email, r[1].message))

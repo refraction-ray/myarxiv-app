@@ -1,111 +1,126 @@
 {% extends 'base.html' %}
 {% block head %}
-<script>
-    $(function () {
-        var main = new Vue({
-            el: "#main",
-            data: {
-                imgurl: "",
-                dailymail: false,
-                profile: "",
-                warning: false,
-                issuccess: false,
-                seen: false,
-                message: "",
-                since: "",
-                verified: "",
-                name: "",
-                email: ""
-
-            },
-            methods: {
-                confirm: function (event) {
-                    event.preventDefault();
-                    console.log("confirm function is activated");
-                    var self = this;
-                    var postform = $.post("/api/userinfo", {
-                        imgurl: self.imgurl,
-                        dailymail: self.dailymail,
-                        profile: self.profile,
-                        ctoken: "{{token}}"
-                    });
-                    postform.done(function (data) {
-                        self.message = data.message;
-                        self.seen = true;
-                        self.issuccess = true;
-                    });
-                    postform.fail(function (err) {
-                        self.message = err.responseJSON.message;
-                        self.seen = true;
-                        self.issuccess = false;
-                    })
-
+    <script>
+        $(function () {
+            var main = new Vue({
+                el: "#main",
+                data: {
+                    imgurl: "",
+                    dailymail: false,
+                    profile: "",
+                    warning: false,
+                    issuccess: false,
+                    seen: false,
+                    message: "",
+                    since: "",
+                    verified: "",
+                    name: "",
+                    email: ""
 
                 },
-                verify: function (event) {
-                    event.preventDefault();
-                    $.getJSON("/api/verify")
+                methods: {
+                    confirm: function (event) {
+                        event.preventDefault();
+                        console.log("confirm function is activated");
+                        var self = this;
+                        var postform = $.post("/api/userinfo", {
+                            imgurl: self.imgurl,
+                            dailymail: self.dailymail,
+                            profile: self.profile,
+                            ctoken: "{{token}}"
+                        });
+                        postform.done(function (data) {
+                            self.message = data.message;
+                            self.seen = true;
+                            self.issuccess = true;
+                        });
+                        postform.fail(function (err) {
+                            self.message = err.responseJSON.message;
+                            self.seen = true;
+                            self.issuccess = false;
+                        })
+
+
+                    },
+                    verify: function (event) {
+                        event.preventDefault();
+                        var self = this;
+                        var r = $.getJSON("/api/verify");
+                        r.done(function (data) {
+                            console.log(data);
+                            self.message = data.message;
+                            self.seen = true;
+                            self.issuccess = true;
+                        });
+                        r.fail(function(err){
+                            console.log(err);
+                            self.message = err.responseJSON.message;
+                            self.seen = true;
+                            self.issuccess = false;
+                        })
+
+                    }
+
+                },
+                created: function () {
+                    var self = this;
+                    var getui = $.getJSON("/api/userinfo");
+                    getui.done(function (data) {
+                        self.imgurl = data.img;
+                        self.dailymail = data.dailymail;
+                        self.profile = data.profile;
+                        self.verified = data.verified;
+                        self.since = data['created_at'];
+                        self.name = data.name;
+                        self.email = data.email;
+                    });
 
                 }
 
-            },
-            created: function () {
-                var self = this;
-                var getui = $.getJSON("/api/userinfo");
-                getui.done(function (data) {
-                    self.imgurl = data.img;
-                    self.dailymail = data.dailymail;
-                    self.profile = data.profile;
-                    self.verified = data.verified;
-                    self.since = data['created_at'];
-                    self.name = data.name;
-                    self.email = data.email;
-                });
-
-            }
-
+            })
         })
-    })
 
-</script>
+    </script>
 {% endblock %}
 
 {% block content %}
-<div class="small-box" id="main">
-    <div class="uk-margin-top"><p class="uk-text-large" v-text="'Welcome '+name+' ! '"></p>
-        <p class="uk-text-primary" v-text="'Member since '+since"></p>
-        <p class="uk-text-danger" v-text="'Registed email address: '+email"></p>
-        <p v-if="verified">(Verified)</p>
-        <p v-else>(Not Verified Yet)</p>
+    <div class="small-box" id="main">
+        <div class="uk-margin-top"><p class="uk-text-large" v-text="'Welcome '+name+' ! '"></p>
+            <p class="uk-text-primary" v-text="'Member since '+since"></p>
+            <p class="uk-text-danger" v-text="'Registed email address: '+email"></p>
+            <p v-if="verified">(Verified)</p>
+            <p v-else>(Not Verified Yet)</p>
+        </div>
+        <flash v-bind.sync="$data"></flash>
+
+
+        <img width="23%" class="uk-align-right" :src="imgurl">
+
+        <form>
+
+            <div class="uk-margin-top uk-margin-bottom">
+                <label class="uk-form-label uk-text-large">URL for your profile image</label>
+                <input class="uk-input uk-margin-top" style="width:60%" type="text" v-model="imgurl"
+                       placeholder="img url">
+            </div>
+
+
+            <div class="uk-margin-top">
+                <label class="uk-form-label uk-text-large">Your profile text</label>
+                <textarea v-model="profile" class="uk-textarea  " rows="5"
+                          placeholder="Describe yourself"></textarea>
+            </div>
+            <div class="uk-margin " v-if="verified">
+                <label><input v-model="dailymail" class="uk-checkbox uk-margin-right" type="checkbox" name="radio2">Subscribe
+                    daily email for
+                    the digestion of arxiv paper. </label>
+
+            </div>
+            <button class="uk-button-primary uk-button-large uk-margin-top" @click="confirm">Confirm User Info</button>
+            <button class="uk-margin-left uk-button-danger uk-button-large uk-margin-top" v-if="!verified"
+                    @click="verify">Verify My Account
+            </button>
+
+        </form>
     </div>
-    <flash v-bind.sync="$data"></flash>
-
-
-    <img width="23%" class="uk-align-right" :src="imgurl">
-
-    <form>
-
-        <div class="uk-margin-top uk-margin-bottom">
-            <label class="uk-form-label uk-text-large">URL for your profile image</label>
-            <input class="uk-input uk-margin-top" style="width:60%" type="text" v-model="imgurl" placeholder="img url">
-        </div>
-
-
-        <div class="uk-margin-top">
-            <label class="uk-form-label uk-text-large">Your profile text</label>
-            <textarea v-model="profile" class="uk-textarea  " rows="5"
-                      placeholder="Describe yourself"></textarea>
-        </div>
-        <div class="uk-margin " v-if="verified">
-            <label><input v-model="dailymail" class="uk-checkbox uk-margin-right" type="checkbox" name="radio2">Subscribe
-                daily email for
-                the digestion of arxiv paper. </label>
-
-        </div>
-        <button class="uk-button-primary uk-button-large uk-margin-top" @click="confirm">Confirm User Info</button>
-        <button class="uk-margin-left uk-button-danger uk-button-large uk-margin-top" v-if="!verified" @click="verify">Verify My Account</button>
-
-        </fieldset>
-    </form>
-</div>
 {% endblock %}

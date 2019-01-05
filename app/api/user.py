@@ -45,7 +45,7 @@ def api_login():
     tries = cache.get("uid_login" + u.email)
     if tries:
         if tries > 5:
-            current_app.logger.info("exceed the max tried of wrong login for user %s"%u.id)
+            current_app.logger.info("exceed the max tried of wrong login for user %s" % u.id)
             raise InvalidInput(message="Please wait for 5 minutes to try again")
     else:
         tries = 0
@@ -161,7 +161,8 @@ def api_verify():
     task = verify_task.delay(u.email, u.name)
     current_app.logger.info("Sending verification email for %s" % u.name)
     return jsonify({"state": "sending",
-                    "message": "An verification mail is sent to you, please click the link inside to verify"})
+                    "message": "An verification mail is sent to you, please click the link inside the mail to verify.\n" +
+                               appmessage['mail_check']})
 
 
 @user.route("/api/password/reset", methods=["POST"])
@@ -178,7 +179,8 @@ def api_password_reset():
     task = reset_password_task.delay(u.email, u.name)
     current_app.logger.info("Sending reset email for %s" % u.name)
     return jsonify({"state": "sending",
-                    "message": "A reset mail is sent to you, please click the link inside to reset the password"})
+                    "message": "A reset mail is sent to you, please click the link inside to reset the password.\n" +
+                               appmessage['mail_check']})
 
 
 @user.route("/api/password/edit", methods=["POST"])
