@@ -3,36 +3,8 @@ from hashlib import sha1, md5
 from datetime import datetime
 
 from .analysisbackend.cons import category
-from .analysisbackend.paperls import Paperls
 from .conf import conf
 from .security import tscf
-
-
-def jsonfrom(ps):  # ps is the list by Paper model
-    l = []
-    for p in ps:
-        m = {}
-        m['pid'] = p.id
-        m['arxiv_id'] = p.arxivid
-        m['title'] = p.title
-        m['summary'] = p.summary
-        m['subject_abbr'] = [p.mainsubject]
-        m['subject_abbr'].extend([s.subject for s in p.subjects])
-        authorwithrank = sorted([(a.authorrank, a.author) for a in p.authors], key=lambda x: x[0])
-        m['authors'] = [a[1] for a in authorwithrank]
-        m['date'] = p.announce.strftime("%Y-%m-%d")
-        m['arxiv_url'] = get_arxiv_url(p)
-        m['favorite'] = 0
-        l.append(m)
-    return l
-
-
-def jsonwithkw(json, kwdict):  # json is the return form jsonfromps
-    lst = Paperls(search_mode=0)
-    lst.contents = json
-    lst.interest_match(kwdict)
-    res = sorted([c for c in lst.contents if c.get('keyword', None)], key=lambda s: s['weight'], reverse=True)
-    return res
 
 
 def get_arxiv_url(paper):
@@ -74,7 +46,7 @@ def hashpass(user, pw, salt):
     return sha1(pw.encode('utf-8')).hexdigest()
 
 
-def str2list(s, minl=3):
+def str2list(s, minl=3):  # make comma separated string as list
     return [r.strip() for r in list(s.split(",")) if len(r.strip()) > minl]
 
 

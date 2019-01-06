@@ -6,7 +6,7 @@ from sqlalchemy import and_, or_
 
 from ..models import db, Paper, Keyword, Favorite, Interest
 from ..tasks import kwmatch_task, arxiv_query
-from ..utils import jsonfrom, jsonwithkw, get_page, pagetodict, timeoutseconds, str2list
+from ..utils import get_page, pagetodict, timeoutseconds, str2list
 from ..cache import cache
 from ..exceptions import InvalidInput
 
@@ -45,9 +45,9 @@ def api_today():
             prev += 1
             if prev > 3:
                 break
-        jsonrs = jsonfrom(ps)
+        jsonrs = Paper.dicts(ps)
         res = jsonify({"results": get_page(jsonrs, pg).dict()})
-        cachekey = "api_today_" + dtstring
+
         current_app.logger.info("set cache key as %s" % cachekey)
         cache.set(cachekey, jsonrs, timeout=3600 * 6)
         return res
@@ -64,12 +64,12 @@ def api_today():
         if prev > 5:
             break
     ps = [p for p in ps if p.mainsubject.startswith(tuple(flist))]
-    jsonrs = jsonfrom(ps)
+
     kws = Keyword.query.filter_by(uid=current_user.id).all()
     kw_dict = {kw.keyword: kw.weight for kw in kws}
-    l = jsonwithkw(jsonrs, kw_dict)
+    l = Paper.dicts(ps, kw_dict)
     res = jsonify({"results": get_page(l, pg).dict()})
-    cachekey = "api_today_" + str(current_user.id) + dtstring
+
     current_app.logger.info("set cache key as %s" % cachekey)
     cache.set(cachekey, l, timeout=timeoutseconds())
     return res
@@ -96,8 +96,8 @@ def api_favorites():
     fs = Favorite.query.filter(Favorite.uid == current_user.id).paginate(pg, 10, False)
     pid = [f.pid for f in fs.items]
     ps = Paper.query.filter(Paper.id.in_(pid)).all()
-    l = jsonfrom(ps)
-    res = {"items": l}
+
+    res = {"items": Paper.dicts(ps)}
     res.update(pagetodict(fs))
     return jsonify({"results": res})
 
@@ -163,9 +163,9 @@ def api_query():
 
     try:
         if isinstance(dates, dict):
-            ds = datetime.strptime(dates.get('start'),"%Y-%m-%d").date()
+            ds = datetime.strptime(dates.get('start'), "%Y-%m-%d").date()
             de = datetime.strptime(dates.get('end'), "%Y-%m-%d").date()
-            dates = [ds + timedelta(days=x) for x in range((de-ds).days + 1)][:90]
+            dates = [ds + timedelta(days=x) for x in range((de - ds).days + 1)][:90]
         else:
             dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:90]]
     except (TypeError, ValueError) as e:
@@ -219,9 +219,9 @@ def api_query():
     except (TypeError, ValueError) as e:
         raise InvalidInput(message="invalid form of keywords")
 
-    jsonrs = jsonfrom(ps)
-    if kw_dict:
-        jsonrs = jsonwithkw(jsonrs, kw_dict)
+    if not kw_dict:
+        kw_dict = None
+    jsonrs = Paper.dicts(ps, kw_dict)
 
     jsonrs = sorted(jsonrs, key=lambda x: x['date'], reverse=True)  # maybe add sorted keys option later
 
@@ -233,14 +233,13 @@ def api_query():
 
     return jsonify({"results": get_page(jsonrs, page, nums=limit).dict()})
 
-
+"""
 @paper.route('/api/papers', methods=["POST"])
 def paperbyid():
     paperid = request.json.get('id', [])
     ps = Paper.query.filter(Paper.arxivid.in_(paperid)).all()
-    l = jsonfrom(ps)
-    return jsonify(l)
-
+    return jsonify(Paper.dicts(ps))
+"""
 
 @paper.route('/api/kwmatch/result/<task_id>')
 def paperbykw_result(task_id):

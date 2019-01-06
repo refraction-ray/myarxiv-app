@@ -65,7 +65,8 @@ def api_login():
 # @login_required
 def api_logout():  # weird combination between view and api?
     logout_user()
-    return redirect("/login")
+    return jsonify({'state': 'success',
+                    'message': "successfully log out"})
 
 
 @user.route("/api/keywords", methods=["GET", "POST"])

@@ -23,6 +23,8 @@ def add_headers(response):
 
 @userview.route('/register')
 def register():
+    if current_user.is_authenticated:
+        return redirect('/')
     form = RegistrationForm()
     return render_template("register.html", form=form, register=True)
 

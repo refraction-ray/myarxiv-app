@@ -3,7 +3,6 @@ celery tasks and periodic tasks of the app
 """
 
 from .main import create_celery_app
-from .utils import jsonfrom
 from .models import db, Paper, Author, Subject, User, UserInfo, Interest, Keyword
 from flask import current_app
 from celery.schedules import crontab
@@ -54,13 +53,7 @@ def setup_periodic_tasks(sender, **kwargs):
 @celery.task
 def kwmatch_task(sdate, kw):
     ps = Paper.query.filter(Paper.announce == sdate).all()
-    if not kw:
-        l = jsonfrom(ps)
-    else:
-        lst = Paperls(search_mode=2)
-        lst.contents = jsonfrom(ps)
-        lst.interest_match(kw_lst2dict(kw))
-        l = lst.show_relevant(purify=True)
+    l = Paper.dicts(ps, kw)
     return l  # list
 
 
@@ -136,11 +129,11 @@ def digestion_mail():
     for u in us:
         fs = Interest.query.filter_by(uid=u.uid).all()
         flist = [f.interest for f in fs]
-        ps = [p for p in ps if p.mainsubject.startswith(tuple(flist))]
+        ups = [p for p in ps if p.mainsubject.startswith(tuple(flist))]
         kws = Keyword.query.filter_by(uid=u.uid).all()
         kwdict = {kw.keyword: kw.weight for kw in kws}
-        lst = Paperls(search_mode=2)
-        lst.contents = jsonfrom(ps)
+        lst = Paperls(search_mode=0)
+        lst.contents = Paper.dicts(ups)
         lst.interest_match(kwdict)
         if lst.contents:
             user = User.query.filter_by(id=u.uid).first()
@@ -162,7 +155,7 @@ def verify_task(email, name):
 
     r = sendmail(**maildict)
     if not r[0]:
-        current_app.logger.warning("the verified mail failed to sent to %s!, the error is" % (email, r[1].message))
+        current_app.logger.warning("the verified mail failed to sent to %s!, the error is %s" % (email, r[1].message))
 
 
 @celery.task
@@ -178,4 +171,4 @@ def reset_password_task(email, name):
 
     r = sendmail(**maildict)
     if not r[0]:
-        current_app.logger.warning("the verified mail failed to sent to %s!, the error is" % (email, r[1].message))
+        current_app.logger.warning("the verified mail failed to sent to %s!, the error is %s" % (email, r[1].message))

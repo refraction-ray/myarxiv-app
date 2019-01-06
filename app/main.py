@@ -1,15 +1,15 @@
 from flask import Flask
-from .models import db
+import os
+from sqlalchemy import exc  # exception base for sqlalchemy
 from celery import Celery
+
+from .models import db
 from .helper import register_blueprints
 from .utils import *  # used for filters of jinja
 from .errorhandler import *  # used for errorhandlers of the app
 from .exceptions import *
 from .loginmanager import login_manager
 from .conf import conf
-import os
-from sqlalchemy import exc  # exception base for sqlalchemy
-import logging
 from .logs import log_init_app
 
 

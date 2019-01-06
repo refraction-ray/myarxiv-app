@@ -10,7 +10,7 @@ def test_correct_login(client, auth):
         assert r.json.get('state') == 'success'
         assert current_user.is_authenticated is True
         r = auth.logout()
-        assert r.headers['Location'] == 'http://localhost/login'
+        assert r.json.get('state') == 'success'
 
 
 def test_wrong_login(client, auth):
@@ -23,10 +23,9 @@ def test_wrong_login(client, auth):
         assert r.json.get('message') == "The password or email is incorrect"
         assert current_user.is_authenticated is False
         r = auth.logout()
-        assert r.status_code == 302
-        # assert r.headers['Location'] == 'http://localhost/login?next=%2Fapi%2Flogout'
+        assert r.json.get('message') == 'successfully log out'
         r = auth.logout()
-        assert r.status_code == 302 # logout of no user doesn't lead to problems
+        assert r.status_code == 200 # logout of no user doesn't lead to problems
 
 
 def test_correct_register(client, auth):
