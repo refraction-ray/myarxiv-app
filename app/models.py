@@ -125,6 +125,11 @@ class Subject(db.Model, myModelMixIn):
     pid = db.Column(db.Integer, db.ForeignKey("paper.id"), nullable=False)
     subject = db.Column(db.String(25), nullable=False)
 
+    def __repr__(self):
+        return "%s "%(self.subject)
+
+    __str__ = __repr__
+
 
 class Author(db.Model, myModelMixIn):
     __tablename__ = "author"
@@ -136,6 +141,10 @@ class Author(db.Model, myModelMixIn):
     author = db.Column(db.String(50), nullable=False)
     authorrank = db.Column(db.Integer, nullable=False)
 
+    def __repr__(self):
+        return "%s) %s "%(self.authorrank,self.author)
+
+    __str__ = __repr__
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -152,9 +161,9 @@ class User(db.Model, myModelMixIn, UserMixin):
     created_at = db.Column(db.DateTime, nullable=False)
     deleted = db.Column(db.Boolean, nullable=False, default=False)
     admin = db.Column(db.Boolean, nullable=False, default=False)
-    # keywords = db.relationship("Keyword")
-    favorites = db.relationship("Favorite")
-    # interests = db.relationship("Interest")
+    keywords = db.relationship("Keyword", cascade="save-update, delete-orphan")
+    favorites = db.relationship("Favorite", cascade="save-update, delete-orphan")
+    interests = db.relationship("Interest", cascade="save-update, delete-orphan")
 
     def dict(self):
         return {
@@ -178,6 +187,9 @@ class Keyword(db.Model, myModelMixIn):
     uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     keyword = db.Column(db.String(100), nullable=False)
     weight = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        return "%s "%self.keyword
 
 
 class Favorite(db.Model, myModelMixIn):
@@ -210,3 +222,6 @@ class Interest(db.Model, myModelMixIn):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     interest = db.Column(db.String(50), nullable=False)
+
+    def __repr__(self):
+        return "%s "%self.interest

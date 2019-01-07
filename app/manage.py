@@ -4,7 +4,8 @@ from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from flask import abort
 
-from .models import db, User, Paper, UserInfo, Favorite
+from .models import (db, User, Paper, UserInfo, Favorite,
+                     Author)
 
 
 class AccessMixIn:
@@ -33,7 +34,8 @@ class myModelView(AccessMixIn, ModelView):
 
 
 class userModelView(myModelView):
-    column_exclude_list = ['password', ]
+    column_exclude_list = ['password','favorites', ]
+    column_display_all_relations = True
 
 
 class favoriteModelView(myModelView):
@@ -41,13 +43,23 @@ class favoriteModelView(myModelView):
 
 
 class paperModelView(myModelView):
-    olumn_searchable_list = ['arxivid', ]
+    column_searchable_list = ['arxivid', ]
     column_filters = ['id', 'arxivid']
+    column_display_all_relations = True
+    can_view_details = True
+
+
+class authorModelView(myModelView):
+    column_list = ["pid", "author", "authorrank"]
+    page_size = 30
+    column_searchable_list = ['author', ]
+
 
 
 admin = Admin(index_view=SecuredHomeView(url='/admin'))
 
 admin.add_view(userModelView(User, db.session, endpoint="admin_user", category="User"))
 admin.add_view(myModelView(UserInfo, db.session, endpoint="admin_info", category="User"))
-admin.add_view(paperModelView(Paper, db.session, endpoint="admin_paper"))
+admin.add_view(paperModelView(Paper, db.session, endpoint="admin_paper", category="Paper"))
+admin.add_view(authorModelView(Author, db.session, endpoint="admin_author", category="Paper"))
 admin.add_view(favoriteModelView(Favorite, db.session, endpoint="admin_favorite"))

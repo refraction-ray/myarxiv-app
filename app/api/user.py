@@ -87,15 +87,9 @@ def api_keywords():
         js = request.json['items']
         u = current_user
         try:
-            # u.keywords = [Keyword(uid=u.id, keyword=j['keyword'], weight=j['weight']) for j in js if len(j.get('keyword', "")) > 0]
-            newrows = [Keyword(uid=u.id, keyword=j['keyword'][:90], weight=j['weight']) for j in js if
+            u.keywords = [Keyword(keyword=j['keyword'][:90], weight=j['weight']) for j in js if
                        len(j.get('keyword', "")) > 0]
-            oldrows = Keyword.query.filter_by(uid=current_user.id).all()
-            for oldrow in oldrows:
-                db.session.delete(oldrow)
-            for newrow in newrows:
-                db.session.add(newrow)
-            db.session.commit()
+            u.save()
         except (KeyError, ValueError) as e:
             raise InvalidInput(message="Something went wrong in the keyword form")
         # try delete relevant cache as much as possible
@@ -117,14 +111,8 @@ def api_fields():
     js = request.json['fields']
     u = current_user
     try:
-        # u.interests = [Interest(interest=j['abbr']) for j in js if j.get('checked', False) is True]
-        newrows = [Interest(uid=u.id, interest=j['abbr'][:45]) for j in js if j.get('checked', False) is True]
-        oldrows = Interest.query.filter_by(uid=current_user.id).all()
-        for oldrow in oldrows:
-            db.session.delete(oldrow)
-        for newrow in newrows:
-            db.session.add(newrow)
-        db.session.commit()
+        u.interests = [Interest(interest=j['abbr'][:45]) for j in js if j.get('checked', False) is True]
+        u.save()
     except (KeyError, ValueError) as e:
         raise InvalidInput(message="Something went wrong in the interest field form")
 
