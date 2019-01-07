@@ -27,6 +27,9 @@ def api_registration():
     u.hashpass()
     db.session.add(u)
     db.session.commit()
+    ui = UserInfo(uid=u.id, img=get_gravatar_url(u.email))
+    db.session.add(ui)
+    db.session.commit()
     return jsonify({'message': 'the user is successfully created',
                     'state': 'success'})
 

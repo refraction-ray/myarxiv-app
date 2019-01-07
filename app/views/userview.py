@@ -1,11 +1,13 @@
 from flask import (Blueprint, request, jsonify, url_for, current_app,
                    render_template, abort, redirect)
+from flask_login import current_user, login_required, login_user
+from itsdangerous import BadData
+
 from ..models import User, db, UserInfo
 from ..exceptions import *
 from ..forms import RegistrationForm, LoginForm
-from flask_login import current_user, login_required
-from flask_login import login_user
-from itsdangerous import BadData
+from ..security import ts
+
 
 userview = Blueprint('userview', __name__)
 

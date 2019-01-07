@@ -154,3 +154,28 @@ def test_nochange_password(client, auth):
     with client:
         auth.login()
         assert current_user.id == 1
+
+def test_edit_password(client, auth, db):
+    with client:
+        ctoken = tscf.dumps(1)
+        postdata = {
+            "ctoken": ctoken,
+            "email": "test@test.com",
+            "password": "qwertyuiop"
+        }
+        r = client.post("/api/password/edit", data=postdata)
+        assert r.status_code == 403
+        auth.login()
+        r = client.post("/api/password/edit", data=postdata)
+        assert r.json.get('message') == "Don't try to do something weird"
+        ui = UserInfo.query.filter_by(uid=1).first()
+        ui.verified = True
+        db.session.commit()
+        r = client.post("/api/password/edit", data=postdata)
+        assert r.json.get('message') == "the password is successfully changed"
+        auth.logout()
+        r = auth.login()
+        assert r.json.get("message") == "The password or email is incorrect"
+        r = auth.login(password="qwertyuiop")
+        assert current_user.is_authenticated
+        assert r.status_code == 200

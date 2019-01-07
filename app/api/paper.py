@@ -79,10 +79,12 @@ def api_today():
 @login_required
 def api_favorites():
     if request.method == "POST":
-        paperid = request.json.get('id', [])
-        # current_app.logger.info("the paperid are %s"%str(paperid))
+        try:
+            paperid = request.json.get('id', [])
+        except AttributeError:
+            raise InvalidInput("illegal form of post body")
         fs = Favorite.query.filter(and_(Favorite.uid == current_user.id, Favorite.pid.in_(paperid))).all()
-        fsid = [f.pid for f in fs]
+        fsid = set([f.pid for f in fs])
         r = []
         for pid in paperid:
             if pid in fsid:
@@ -91,7 +93,8 @@ def api_favorites():
                 r.append(0)
         res = jsonify({'results': r})
         return res
-    # GET method, fetch all favorites paper json
+
+    # GET method, fetch all favorites paper in json form
     pg = int(request.args.get("page", "1") or "1")
     fs = Favorite.query.filter(Favorite.uid == current_user.id).paginate(pg, 10, False)
     pid = [f.pid for f in fs.items]

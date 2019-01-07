@@ -42,6 +42,19 @@ def test_favorite_get(client, auth):
         assert len(r.json.get('results').get('items')) == 1
 
 
+def test_favorite_post(client, auth):
+    with client:
+        r = client.post("/api/favorites", json={"id":"1812.35598"})
+        assert r.status_code == 403
+        auth.login()
+        r = client.post("/api/favorites", json=["1812.35598"])
+        assert r.status_code == 422
+        r = client.post("/api/favorites", json={"id":[2]})
+        assert r.json.get("results")[0] == 1
+        r = client.post("/api/favorites", json={"id": [1]})
+        assert r.json.get("results")[0] == 0
+
+
 def test_correct_query(cache, client, auth):
     with client:
         r = client.post("/api/query", json={"dates": ["2018-12-17"]})
@@ -50,12 +63,12 @@ def test_correct_query(cache, client, auth):
         assert r.json.get('results')['last'] == 1
         assert r.json.get('results')['nums'] == 10
         auth.login()
-        r = client.post("/api/query", json={"dates": ["2018-12-17","2019-12-31"],
+        r = client.post("/api/query", json={"dates": ["2018-12-17", "2019-12-31"],
                                             "default_subjects": True,
                                             "default_keywords": True,
                                             "keywords": ["brain"]})
         assert r.status_code == 200
         assert len(r.json.get('results')['items'][0]['keyword']) == 3
-        r = client.post("/api/query", json={"dates": ["2018-12-17","2019-12-31"],
+        r = client.post("/api/query", json={"dates": ["2018-12-17", "2019-12-31"],
                                             "favorites": True})
         assert len(r.json.get('results')['items']) == 1
