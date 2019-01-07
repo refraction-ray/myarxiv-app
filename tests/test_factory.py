@@ -7,7 +7,7 @@ def test_config(app):
 
 def test_logger(app):
     logger = app.logger
-    assert len(logger.handlers) == 1
+    assert len(logger.handlers) == 0
     assert logger.name == "flask.app"
 
 

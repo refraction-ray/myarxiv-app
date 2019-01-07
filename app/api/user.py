@@ -25,6 +25,8 @@ def api_registration():
         raise InvalidInput(message="The username has already been used.")
     u = User(name=form.name.data, email=form.email.data, password=form.password.data, created_at=datetime.now())
     u.hashpass()
+    if u.id == 1:
+        u.admin = True
     db.session.add(u)
     db.session.commit()
     ui = UserInfo(uid=u.id, img=get_gravatar_url(u.email))
@@ -39,7 +41,8 @@ def api_login():
     current_app.logger.info("get request for login %s" % request.form)
     form = LoginForm(request.form)
     current_app.logger.info("email %s, password %s***" % (form.email.data, form.password.data[:2]))
-    u = User.query.filter_by(email=form.email.data).first()
+    # u = User.query.filter_by(email=form.email.data).first()
+    u = User.get(email=form.email.data)
     if not form.validate():
         raise InvalidInput(message="Incorrect input in the form", payload=form.errors)
     if not u:

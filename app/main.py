@@ -11,7 +11,7 @@ from .exceptions import *
 from .loginmanager import login_manager
 from .conf import conf
 from .logs import log_init_app
-
+from .manage import admin
 
 def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
     print("------------")
@@ -36,7 +36,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
             app.jinja_env.filters[filter] = globals()[filter]
     for item in globals():
         if item.startswith("on_"):
-            app.logger.info("register %s as error handler" % item)
+            # app.logger.info("register %s as error handler" % item)
             try:
                 app.register_error_handler(globals()[item[3:]], globals()[item])
             except:
@@ -48,6 +48,7 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
     if blueprints is True:
         register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
         log_init_app(app)
+        admin.init_app(app)
 
     print("finish the app factory")
     print("------------")

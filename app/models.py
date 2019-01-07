@@ -5,6 +5,8 @@ data models of the app defined by SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
 from hashlib import sha1
 from flask_login import UserMixin
+from sqlalchemy.inspection import inspect
+
 from .analysisbackend.paperls import Paperls
 from .loginmanager import login_manager
 from .conf import conf
@@ -17,6 +19,54 @@ class myModelMixIn:
     @staticmethod
     def dicts(models):
         return [model.dict() for model in models]
+
+    @classmethod
+    def find(cls, *args, **kwargs):
+        """
+        avaiable for one condition filter
+        """
+        if args:
+            pk = inspect(cls).primary_key[0].name
+            return cls.query.filter_by(**{pk: args[0]})
+        else:
+            return cls.query.filter_by(**kwargs)
+
+    @classmethod
+    def get(cls, *args, **kwargs):
+        return cls.find(*args, **kwargs).first()
+
+    getone = get
+
+    @classmethod
+    def gets(cls, *args, **kwargs):
+        return cls.find(*args, **kwargs).all()
+
+    getall = gets
+
+    @classmethod
+    def getpage(cls, page=1, nums=10, *args, **kwargs):
+        return cls.find(*args, **kwargs).paginate(page, nums, False)
+
+    def session_save(self, create=False):
+        if create:
+            db.session.add(self)
+        db.session.commit()
+
+    save = session_save
+
+    @classmethod
+    def create(cls, commit=True, **kwargs):
+        instance = cls(**kwargs)
+        if commit:
+            instance.save(True)
+        return instance
+
+    def update(self, commit=True, **kwargs):
+        for attr, value in kwargs.items():
+            setattr(self, attr, value)
+        if commit:
+            db.session.commit()
+        return self
 
 
 class Paper(db.Model, myModelMixIn):
@@ -104,7 +154,6 @@ class User(db.Model, myModelMixIn, UserMixin):
     admin = db.Column(db.Boolean, nullable=False, default=False)
     # keywords = db.relationship("Keyword")
     favorites = db.relationship("Favorite")
-
     # interests = db.relationship("Interest")
 
     def dict(self):

@@ -168,11 +168,14 @@ def api_query():
         if isinstance(dates, dict):
             ds = datetime.strptime(dates.get('start'), "%Y-%m-%d").date()
             de = datetime.strptime(dates.get('end'), "%Y-%m-%d").date()
-            dates = [ds + timedelta(days=x) for x in range((de - ds).days + 1)][:90]
+            dates = [ds + timedelta(days=x) for x in range((de - ds).days + 1)][:180]
         else:
-            dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:90]]
+            dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:180]]
     except (TypeError, ValueError) as e:
         raise InvalidInput(message="invalid form of date strings")
+
+    if not current_user.is_authenticated:
+        dates = dates[:60]
 
     subjects = r.get('subjects', []) or []
     if isinstance(subjects, str):
