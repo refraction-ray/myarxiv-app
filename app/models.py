@@ -150,8 +150,12 @@ class Author(db.Model, myModelMixIn):
 def load_user(user_id):
     return db.session.query(User).get(user_id)
 
+class myUserMixin(UserMixin):
+    def is_admin(self):
+        return self.admin
 
-class User(db.Model, myModelMixIn, UserMixin):
+
+class User(db.Model, myModelMixIn, myUserMixin):
     __tablename__ = "user"
     __table_args__ = {'mysql_charset': "utf8mb4"}
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

@@ -9,6 +9,7 @@ from ..tasks import kwmatch_task, arxiv_query
 from ..utils import get_page, pagetodict, timeoutseconds, str2list
 from ..cache import cache
 from ..exceptions import InvalidInput
+from ..tasks import celery
 
 paper = Blueprint('paper', __name__)
 
@@ -239,6 +240,7 @@ def api_query():
 
     return jsonify({"results": get_page(jsonrs, page, nums=limit).dict()})
 
+
 """
 @paper.route('/api/papers', methods=["POST"])
 def paperbyid():
@@ -247,23 +249,9 @@ def paperbyid():
     return jsonify(Paper.dicts(ps))
 """
 
-@paper.route('/api/kwmatch/result/<task_id>')
-def paperbykw_result(task_id):
-    current_app.logger.info("begin query the status of the result")
-    fetch_task = kwmatch_task.AsyncResult(task_id)
-    current_app.logger.info("the result status is %s" % fetch_task.ready())
-    if fetch_task.ready() is False:
-        response = {
-            'state': str(fetch_task.status),
-            'msg': "not finished yet"
-        }
-    else:
-        response = fetch_task.get()
-    return jsonify(response)
-
 
 @paper.route('/api/kwmatch', methods=["POST"])
-def paperbykw():
+def api_kwmatch():
     sdate = request.json.get('date', None)
     if sdate is None:
         sdate = date.today()
@@ -274,26 +262,30 @@ def paperbykw():
     match_task = kwmatch_task.delay(sdate, kw)
 
     return jsonify(), 202, \
-           {'Location': url_for('paper.paperbykw_result',
+           {'Location': url_for('paper.api_status_task',
                                 task_id=match_task.id)}
 
 
 @paper.route('/api/download', methods=["POST"])
-def downloadpaper():
+def api_download():
     query_task = arxiv_query.delay(**request.json)
 
-    return jsonify({"status": "accepted"})
+    return jsonify({"status": "accepted",
+                    "taskid": query_task.id})
 
 
-@paper.route('/api/status/<taskid>')
-def valid_paper(taskid):
-    task = arxiv_query.AsyncResult(taskid)
+@paper.route('/api/status/<taskid>')  # the api for results of any task
+def api_status_task(taskid):
+    task = celery.AsyncResult(taskid)  # for result of general task only retrieved by id
     if task.ready() is False:
         response = {
-            'state': -1
+            'state': -1,
+            'message': 'not finished yet',
+            'status': str(task.status)
         }
     else:
         response = {'state': task.get()}
+        # task.forget()
     return jsonify(response)
 
 

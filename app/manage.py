@@ -36,6 +36,14 @@ class myModelView(AccessMixIn, ModelView):
 class userModelView(myModelView):
     column_exclude_list = ['password','favorites', ]
     column_display_all_relations = True
+    form_widget_args = {
+        'email': {
+            'readonly': True
+        },
+        'password': {
+            'readonly': True
+        }
+    }
 
 
 class favoriteModelView(myModelView):

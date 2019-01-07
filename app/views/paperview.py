@@ -1,9 +1,9 @@
-from flask import (Blueprint, request, jsonify, url_for, current_app,
+from flask import (Blueprint, request, url_for, current_app,
                    render_template, abort, redirect)
+
 from ..models import Paper
 from ..exceptions import *
 from ..utils import get_arxiv_url, get_pdf_url
-from flask_login import login_required, current_user
 from ..tasks import arxiv_query
 
 paperview = Blueprint('paperview', __name__)
