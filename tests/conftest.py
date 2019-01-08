@@ -62,6 +62,9 @@ def app():
 
 @pytest.fixture(scope='function', autouse=True)
 def db(app):
+    """
+    This function should be implicitly called for each test, since the db is closed each time
+    """
     connection = db_test.engine.connect()
     transaction = connection.begin()
 

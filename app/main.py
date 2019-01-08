@@ -1,10 +1,14 @@
+"""
+main module for create_app and factory pattern
+"""
+
 from flask import Flask
 import os
 from sqlalchemy import exc  # exception base for sqlalchemy
 from celery import Celery
 
 from .models import db
-from .helper import register_blueprints
+from .helper import register_blueprints, register_errorhandlers, register_jinja_filters
 from .utils import *  # used for filters of jinja
 from .errorhandler import *  # used for errorhandlers of the app
 from .exceptions import *
@@ -30,17 +34,6 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
             except exc.OperationalError:
                 print("Maybe something went wrong on creating tables in mysql")
     app.secret_key = conf['SECRET_KEY'].encode('utf8')
-    login_manager.init_app(app)
-    if app.config.get("JINJA_FILTERS", None):
-        for filter in app.config["JINJA_FILTERS"]:
-            app.jinja_env.filters[filter] = globals()[filter]
-    for item in globals():
-        if item.startswith("on_"):
-            # app.logger.info("register %s as error handler" % item)
-            try:
-                app.register_error_handler(globals()[item[3:]], globals()[item])
-            except:
-                app.register_error_handler(int(item[3:]), globals()[item])
     # app.register_error_handler(404, on_404)
     # app.register_error_handler(InvalidInput, on_invalidinput)
     print("app.debug: %s" % app.debug)
@@ -49,6 +42,9 @@ def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=
         register_blueprints(app, "app", os.path.dirname(os.path.abspath(__file__)))
         log_init_app(app)
         admin.init_app(app)
+        login_manager.init_app(app)
+        register_errorhandlers(app, globals())
+        register_jinja_filters(app, globals())
 
     print("finish the app factory")
     print("------------")

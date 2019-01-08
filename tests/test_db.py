@@ -40,3 +40,4 @@ def test_modelmixin():
     assert Author.get(authorrank=10).pid == 2
     a.update(pid=3)
     assert Author.get(authorrank=10).pid == 3
+    assert a.dict() == {'author': 'Foo Bar Go', 'authorrank': 10, 'id': 27, 'pid': 3}

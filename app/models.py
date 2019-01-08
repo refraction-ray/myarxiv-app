@@ -16,6 +16,15 @@ db = SQLAlchemy()
 
 
 class myModelMixIn:
+    def dict(self):
+        """
+        default interface as model to dict
+        """
+        r = {}
+        for item in self.__class__.__table__.columns:
+            r[item.key] = getattr(self, item.key)
+        return r
+
     @staticmethod
     def dicts(models):
         return [model.dict() for model in models]
@@ -126,7 +135,7 @@ class Subject(db.Model, myModelMixIn):
     subject = db.Column(db.String(25), nullable=False)
 
     def __repr__(self):
-        return "%s "%(self.subject)
+        return "%s " % (self.subject)
 
     __str__ = __repr__
 
@@ -142,13 +151,15 @@ class Author(db.Model, myModelMixIn):
     authorrank = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
-        return "%s) %s "%(self.authorrank,self.author)
+        return "%s) %s " % (self.authorrank, self.author)
 
     __str__ = __repr__
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.query(User).get(user_id)
+
 
 class myUserMixin(UserMixin):
     def is_admin(self):
@@ -165,9 +176,9 @@ class User(db.Model, myModelMixIn, myUserMixin):
     created_at = db.Column(db.DateTime, nullable=False)
     deleted = db.Column(db.Boolean, nullable=False, default=False)
     admin = db.Column(db.Boolean, nullable=False, default=False)
-    keywords = db.relationship("Keyword", cascade="save-update, delete-orphan")
-    favorites = db.relationship("Favorite", cascade="save-update, delete-orphan")
-    interests = db.relationship("Interest", cascade="save-update, delete-orphan")
+    keywords = db.relationship("Keyword", cascade="all, delete-orphan")
+    favorites = db.relationship("Favorite", cascade="all, delete-orphan")
+    interests = db.relationship("Interest", cascade="all, delete-orphan")
 
     def dict(self):
         return {
@@ -193,7 +204,7 @@ class Keyword(db.Model, myModelMixIn):
     weight = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
-        return "%s "%self.keyword
+        return "%s " % self.keyword
 
 
 class Favorite(db.Model, myModelMixIn):
@@ -228,4 +239,4 @@ class Interest(db.Model, myModelMixIn):
     interest = db.Column(db.String(50), nullable=False)
 
     def __repr__(self):
-        return "%s "%self.interest
+        return "%s " % self.interest

@@ -1,3 +1,7 @@
+"""
+cache object backend as redis server
+"""
+
 from werkzeug.contrib.cache import RedisCache
 from .conf import conf
 

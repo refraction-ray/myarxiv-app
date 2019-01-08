@@ -5,10 +5,10 @@ security token related stuff
 from itsdangerous import URLSafeTimedSerializer, BadData
 from functools import wraps
 from flask import request, current_app
+from flask_login import current_user
 
 from .conf import conf
 from .exceptions import PermissionDenied
-from flask_login import current_user
 
 ts = URLSafeTimedSerializer(conf["SECRET_KEY"], salt="verified")
 tscf = URLSafeTimedSerializer(conf["SECRET_KEY"], salt="ctoken")

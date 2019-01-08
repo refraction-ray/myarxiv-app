@@ -41,9 +41,9 @@ def register_blueprints(app, package_name, package_path):
     :param package_path: the package path
     """
     rv = []
-    blacklist = ["wsgi", "dbinit", "tasks"]
+    blist = ["views", "api"]
     for _, name, _ in pkgutil.iter_modules([package_path]):
-        if name not in blacklist:
+        if name in blist:
             m = importlib.import_module('%s.%s' % (package_name, name))
             for item in dir(m):
                 item = getattr(m, item)
@@ -52,3 +52,19 @@ def register_blueprints(app, package_name, package_path):
                     print(item)
                 rv.append(item)
     return rv
+
+
+def register_errorhandlers(app, env):
+    for item in env:
+        if item.startswith("on_"):
+            # app.logger.info("register %s as error handler" % item)
+            try:
+                app.register_error_handler(env[item[3:]], env[item])
+            except:
+                app.register_error_handler(int(item[3:]), env[item])
+
+
+def register_jinja_filters(app, env):
+    if app.config.get("JINJA_FILTERS", None):
+        for filter in app.config["JINJA_FILTERS"]:
+            app.jinja_env.filters[filter] = env[filter]

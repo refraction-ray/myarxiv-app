@@ -1,3 +1,7 @@
+"""
+admin pages for database management
+"""
+
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.form import SecureForm
 from flask_admin.contrib.sqla import ModelView
