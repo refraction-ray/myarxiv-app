@@ -2,18 +2,19 @@
 celery tasks and periodic tasks of the app
 """
 
-from .main import create_celery_app
-from .models import db, Paper, Author, Subject, User, UserInfo, Interest, Keyword
 from flask import current_app
 from celery.schedules import crontab
 from datetime import date, datetime
-from .security import ts
 from sqlalchemy import and_, exc
 from functools import wraps
+
+from .main import create_celery_app
+from .models import db, Paper, Author, Subject, User, UserInfo, Interest, Keyword
 from .analysisbackend.paperls import Paperls, kw_lst2dict
 from .analysisbackend.notification import sendmail
 from .conf import maildict, conf
 from .cache import cache
+from .security import ts
 from .exceptions import appmessage
 
 celery = create_celery_app()

@@ -284,7 +284,8 @@ def api_status_task(taskid):
             'status': str(task.status)
         }
     else:
-        response = {'state': task.get()}
+        response = {'state': task.get(),
+                    'status': 'success'}
         # task.forget()
     return jsonify(response)
 
