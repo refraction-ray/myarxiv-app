@@ -135,11 +135,12 @@ def api_favorites_switch():
 def api_query():
     """
     implemented options include:
+    pid(list)
     authors(list, full name is required), dates (list, in the form %Y-%m-%d)
     subjects (list), page(int), limit(int, how many items in one page), keywords(list),
     default_keywords (bool, add keywords of the user in the search list)
     default_subjects (bool), favorites(bool, only include favorite paper of the user)
-    for authors, keywords and subjects, comma separated string is also supported
+    for pid, authors, keywords and subjects, comma separated string is also supported
     :return:
     """
     r = request.json
@@ -153,15 +154,17 @@ def api_query():
         limit = int(limit)
         if limit > 100:
             limit = 100
-    except (TypeError, ValueError) as e:
+    except (TypeError, ValueError, AttributeError) as e:
         raise InvalidInput(message="invalid form of pages")
 
     if c:
         return jsonify({"results": get_page(c, page, nums=limit).dict()})
 
     dates = r.get('dates', []) or []
+    dateinput = True
     if not dates:
         dates = []
+        dateinput = False
         for d in range(30):
             dates.append((date.today() - timedelta(days=d)).strftime("%Y-%m-%d"))
 
@@ -172,7 +175,7 @@ def api_query():
             dates = [ds + timedelta(days=x) for x in range((de - ds).days + 1)][:180]
         else:
             dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in dates[:180]]
-    except (TypeError, ValueError) as e:
+    except (TypeError, ValueError, AttributeError) as e:
         raise InvalidInput(message="invalid form of date strings")
 
     if not current_user.is_authenticated:
@@ -188,14 +191,29 @@ def api_query():
             ss_subject = [s.interest for s in ss]
             subjects.extend(ss_subject)
         subjects = list(subjects)
-    except (TypeError, ValueError) as e:
+    except (TypeError, ValueError, AttributeError) as e:
         raise InvalidInput(message="invalid form of subjects")
 
-    if subjects:
+    pid = r.get('pid', []) or []
+    if isinstance(pid, str):
+        pid = str2list(pid)
+
+    if subjects and not pid:
         ps = Paper.query.filter(and_(Paper.announce.in_(dates), or_(
             *[Paper.mainsubject.like(start + "%") for start in subjects]
         ))).all()
-    else:
+    elif subjects and pid and not dateinput:
+        ps = Paper.query.filter(and_(Paper.arxivid.in_(pid),
+                                     or_(*[Paper.mainsubject.like(start + "%") for start in subjects]))).all()
+    elif subjects and pid and dateinput:
+        ps = Paper.query.filter(and_(Paper.arxivid.in_(pid),
+                                     or_(*[Paper.mainsubject.like(start + "%") for start in subjects]),
+                                     Paper.announce.in_(dates))).all()
+    elif not subjects and pid and not dateinput:
+        ps = Paper.query.filter(Paper.arxivid.in_(pid)).all()
+    elif not subjects and pid and dateinput:
+        ps = Paper.query.filter(and_(Paper.arxivid.in_(pid), Paper.announce.in_(dates))).all()
+    else: # elif not subjects and not pid:
         ps = Paper.query.filter(Paper.announce.in_(dates)).all()
 
     favorite = r.get('favorites', False)
@@ -211,7 +229,7 @@ def api_query():
         try:
             authors = set(authors)
             ps = [p for p in ps if authors.intersection(set([a.author for a in p.authors]))]
-        except (TypeError, ValueError) as e:
+        except (TypeError, ValueError, AttributeError) as e:
             raise InvalidInput(message="invalid form of authors")
 
     keywords = r.get('keywords', []) or []
@@ -223,7 +241,7 @@ def api_query():
             ks = Keyword.query.filter_by(uid=current_user.id).all()
             keywords.extend([k.keyword for k in ks])
         kw_dict = {k: 1 for k in keywords}
-    except (TypeError, ValueError) as e:
+    except (TypeError, ValueError, AttributeError) as e:
         raise InvalidInput(message="invalid form of keywords")
 
     if not kw_dict:

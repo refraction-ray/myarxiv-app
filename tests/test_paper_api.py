@@ -72,3 +72,5 @@ def test_correct_query(cache, client, auth):
         r = client.post("/api/query", json={"dates": ["2018-12-17", "2019-12-31"],
                                             "favorites": True})
         assert len(r.json.get('results')['items']) == 1
+        r = client.post("/api/query", json={"pid": "1812.35598,1812.35602", "keywords": "quantum"})
+        assert len(r.json.get('results')['items']) == 2

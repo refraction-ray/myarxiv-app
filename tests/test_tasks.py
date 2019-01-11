@@ -16,14 +16,12 @@ class TestTask:
         r = client.post("/api/download", json={"search_mode": 1, "id_list": ["1701.00001"]})
         assert r.json.get('status') == "accepted"
         tid = r.json.get('taskid')
-        time.sleep(5)
         r = client.get('/api/status/' + tid)
         tries = 0
-        while r.json.get('state') == -1 and tries<10:
+        while r.json.get('state') == -1 and tries < 20:
             time.sleep(2)
             tries += 1
             r = client.get('/api/status/' + tid)
         assert r.json.get('state') == 1
         celery_app.AsyncResult(tid).forget()
         assert Paper.get(arxivid="1701.00001")
-

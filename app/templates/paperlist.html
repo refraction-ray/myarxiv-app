@@ -293,6 +293,10 @@
                 </v-date-picker>
             </div>
             <div class="uk-margin">
+                <input class="uk-input uk-form-width-large" type="text" placeholder="Paper arxiv id, separated by comma"
+                       v-model="searchobj.pid">
+            </div>
+            <div class="uk-margin">
                 <input class="uk-input uk-form-width-large" type="text" placeholder="Keywords, separated by comma"
                        v-model="searchobj.keywords">
             </div>
@@ -329,6 +333,7 @@
                 <p>The author name must be the full name. If you want to search someone's paper by part of the name,
                     we suggest using the name as keywords instead of authors.</p>
                 <p>Strings for authors, subjects and keywords no more than 3 chars are omitted.</p>
+                <p>Logged in user can search in longer time ranges.</p>
             </div>
         </div>
 
