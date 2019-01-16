@@ -36,6 +36,7 @@ def test_correct_register(client, auth):
         r = auth.login(email='test101@test.com', password='testtest')
         assert current_user.is_authenticated is True
         r = auth.logout()
+        assert current_user.get_id() is None
 
 
 def test_wrong_register(client, auth):

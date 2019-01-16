@@ -44,12 +44,12 @@ def test_favorite_get(client, auth):
 
 def test_favorite_post(client, auth):
     with client:
-        r = client.post("/api/favorites", json={"id":"1812.35598"})
+        r = client.post("/api/favorites", json={"id": "1812.35598"})
         assert r.status_code == 403
         auth.login()
         r = client.post("/api/favorites", json=["1812.35598"])
         assert r.status_code == 422
-        r = client.post("/api/favorites", json={"id":[2]})
+        r = client.post("/api/favorites", json={"id": [2]})
         assert r.json.get("results")[0] == 1
         r = client.post("/api/favorites", json={"id": [1]})
         assert r.json.get("results")[0] == 0
@@ -73,4 +73,15 @@ def test_correct_query(cache, client, auth):
                                             "favorites": True})
         assert len(r.json.get('results')['items']) == 1
         r = client.post("/api/query", json={"pid": "1812.35598,1812.35602", "keywords": "quantum"})
+        assert len(r.json.get('results')['items']) == 2
+
+
+def test_samequery_diffuser(cache, client, auth):
+    with client:
+        samejson = {"dates": {"start":"2018-12-17","end":"2018-12-17"},
+                    "default_keywords": True}
+        r = client.post("/api/query", json=samejson)
+        assert len(r.json.get('results')['items']) == 3
+        auth.login()
+        r = client.post("/api/query", json=samejson)
         assert len(r.json.get('results')['items']) == 2

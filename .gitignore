@@ -11,7 +11,6 @@ app/static/css/uikit*
 app/static/js/jquery*
 app/static/js/uikit*
 app/static/js/vue*
-TODO*
 .coverage
 .pytest_cache/
 tests/config_test_override.yaml
