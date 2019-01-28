@@ -138,6 +138,7 @@ def api_query():
     pid(list)
     authors(list, full name is required), dates (list, in the form %Y-%m-%d)
     subjects (list), page(int), limit(int, how many items in one page), keywords(list),
+    sortby(str), default with date
     default_keywords (bool, add keywords of the user in the search list)
     default_subjects (bool), favorites(bool, only include favorite paper of the user)
     for pid, authors, keywords and subjects, comma separated string is also supported
@@ -221,6 +222,7 @@ def api_query():
         fs = Favorite.query.filter_by(uid=current_user.id).all()
         fs_set = set([f.pid for f in fs])
         ps = [p for p in ps if p.id in fs_set]
+
 
     authors = r.get('authors', None)
     if isinstance(authors, str):

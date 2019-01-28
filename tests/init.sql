@@ -49,6 +49,7 @@ CREATE TABLE `favorite` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uid` int(11) NOT NULL,
   `pid` int(11) NOT NULL,
+  `fdate` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `uid` (`uid`),
   KEY `pid` (`pid`),
@@ -63,7 +64,7 @@ SET character_set_client = @saved_cs_client ;
 
 LOCK TABLES `favorite` WRITE;
 /*!40000 ALTER TABLE `favorite` DISABLE KEYS */;
-INSERT INTO `favorite` VALUES (1,1,2);
+INSERT INTO `favorite` VALUES (1,1,2,"2018-12-30");
 /*!40000 ALTER TABLE `favorite` ENABLE KEYS */;
 UNLOCK TABLES;
 

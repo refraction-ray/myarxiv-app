@@ -36,17 +36,19 @@ def email_limit(minutes=3):  # decorator to limit the frequency of email to the 
 
 
 field_list = conf['PERIODIC_FIELD_DOWNLOAD']
+arxiv_update_time = [int(t) for t in conf['ARXIV_UPDATE_TIME'].split(":")]
+email_digest_time = [int(t) for t in conf['EMAIL_DIGEST_TIME'].split(":")]
 
 
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(hour=9, minute=39, day_of_week=[1, 2, 3, 4, 5]),
+        crontab(hour=arxiv_update_time[0], minute=arxiv_update_time[1], day_of_week=[1, 2, 3, 4, 5]),
         arxiv_grab.s(field_list),
     )
 
     sender.add_periodic_task(
-        crontab(hour=9, minute=49, day_of_week=[1, 2, 3, 4, 5]),
+        crontab(hour=email_digest_time[0], minute=email_digest_time[1], day_of_week=[1, 2, 3, 4, 5]),
         digestion_mail.s(),
     )
 

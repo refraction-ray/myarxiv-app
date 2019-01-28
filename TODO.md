@@ -6,6 +6,8 @@
 - [x] bug: unsorted by weight for papers
 - [x] security bug: verify link faked by cfrs token
 - [x] bug in cache of query API, diff users may get the same result 
+- [x] index on arxivid and date
+- [x] make crontab time into yaml config
 
 ## Near Term
 
@@ -16,6 +18,7 @@
 - [x] make celery worker run in test
 - [ ] unsubscribe in email
 - [ ] systematically bulk download of previous papers
+- [ ] favorite with time feature
 
 ## Future Plan
 

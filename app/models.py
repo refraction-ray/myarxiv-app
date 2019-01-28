@@ -86,7 +86,7 @@ class Paper(db.Model, myModelMixIn):
     title = db.Column(db.String(2048), nullable=False)
     summary = db.Column(db.TEXT, nullable=False)
     mainsubject = db.Column(db.String(32), nullable=False)
-    announce = db.Column(db.Date)
+    announce = db.Column(db.Date, index=True)
     subjects = db.relationship("Subject")
     authors = db.relationship("Author")
 
@@ -213,6 +213,7 @@ class Favorite(db.Model, myModelMixIn):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     uid = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     pid = db.Column(db.Integer, db.ForeignKey("paper.id"), nullable=False)
+    fdate = db.Column(db.Date)
 
 
 class UserInfo(db.Model, myModelMixIn):

@@ -78,7 +78,7 @@ def test_correct_query(cache, client, auth):
 
 def test_samequery_diffuser(cache, client, auth):
     with client:
-        samejson = {"dates": {"start":"2018-12-17","end":"2018-12-17"},
+        samejson = {"dates": {"start": "2018-12-17", "end": "2018-12-17"},
                     "default_keywords": True}
         r = client.post("/api/query", json=samejson)
         assert len(r.json.get('results')['items']) == 3
