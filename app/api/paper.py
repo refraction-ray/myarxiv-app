@@ -98,10 +98,14 @@ def api_favorites():
     # GET method, fetch all favorites paper in json form
     pg = int(request.args.get("page", "1") or "1")
     fs = Favorite.query.filter(Favorite.uid == current_user.id).paginate(pg, 10, False)
-    pid = [f.pid for f in fs.items]
-    ps = Paper.query.filter(Paper.id.in_(pid)).all()
+    pid = {f.pid: f.fdate for f in fs.items}
+    ps = Paper.query.filter(Paper.id.in_(list(pid))).all()
 
-    res = {"items": Paper.dicts(ps)}
+    content = Paper.dicts(ps)
+    for c in content:
+        c['fdate'] = pid[c['pid']].strftime("%Y-%m-%d")
+    content.sort(key=lambda x: x['fdate'], reverse=True)
+    res = {"items": content}
     res.update(pagetodict(fs))
     return jsonify({"results": res})
 
@@ -214,7 +218,7 @@ def api_query():
         ps = Paper.query.filter(Paper.arxivid.in_(pid)).all()
     elif not subjects and pid and dateinput:
         ps = Paper.query.filter(and_(Paper.arxivid.in_(pid), Paper.announce.in_(dates))).all()
-    else: # elif not subjects and not pid:
+    else:  # elif not subjects and not pid:
         ps = Paper.query.filter(Paper.announce.in_(dates)).all()
 
     favorite = r.get('favorites', False)
@@ -222,7 +226,6 @@ def api_query():
         fs = Favorite.query.filter_by(uid=current_user.id).all()
         fs_set = set([f.pid for f in fs])
         ps = [p for p in ps if p.id in fs_set]
-
 
     authors = r.get('authors', None)
     if isinstance(authors, str):

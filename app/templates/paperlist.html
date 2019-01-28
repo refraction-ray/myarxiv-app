@@ -347,7 +347,7 @@
                     <a class="uk-button uk-button-default" href='#' v-on:click="keywordlist(k, $event)"><% k[0]
                         %></a>
                 </template>
-                <p class="uk-article-meta">Added to favorite on <%item['date'] %></p>
+                <p class="uk-article-meta" v-if="item['fdate']">Added to favorite on <%item['fdate'] %></p>
                 <h3> <% item.title %></h3>
                 <div class="uk-margin-top">
                     <template v-for="(a, index) in item['authors']">
