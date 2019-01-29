@@ -20,7 +20,7 @@
 - [ ] systematically bulk download of previous papers
 - [x] favorite with time feature
 - [x] webpack and flask: two servers in develop
-- [ ] modify docker config considering webpack
+- [x] modify docker config considering webpack
 
 ## Future Plan
 

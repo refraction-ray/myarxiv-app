@@ -4,9 +4,17 @@ A Flask web app written in Python 3. See the live demo at https://myarxiv.club (
 
 ## Quickstart
 
-All commands below are executed in bash and the working directory is the root of the project.
+All commands below are executed in bash and the working directory is the root of the project, installation of python (pip) and node (npm) is assumed.
 
-* Run the app in development mode, `./run.sh` 
+First of all, one need to generate `main.js` and other static files via webpack.
+
+```bash
+npm install
+npm run build # for development static files
+npm run deploy # for production static files
+```
+
+* Run the app in development mode, `./run.sh` . You can also use `npm run all` to start both flask and webpack servers for development.
 
 * Run the app in production mode, ` gunicorn -w 4 -b 0.0.0.0:9999 app.wsgi:app`
 
@@ -32,7 +40,7 @@ All commands below are executed in bash and the working directory is the root of
 
   For the above three options, you need to configure mysql and redis databases and their connections manually. In Ubuntu, try `apt install -y redis-server mysql-server libmysqlclient-dev` . 
 
-* Run the flask app in docker (with both mysql and redis also in dockers). In this case, the host url are recommended as `mysql` and `redis` in config.yaml.
+* Run the flask app in docker (with both mysql and redis also in dockers). In this case, the host url for databases are recommended as `mysql` and `redis` respectively in config.yaml.
 
   ```bash
   docker-compose build
