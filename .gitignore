@@ -20,4 +20,6 @@ tests/test_test.py
 logs/*.log
 node_modules/
 package-lock.json
-app/static/build
+app/static/build/dev
+app/static/build/prod
+app/templates/ext*

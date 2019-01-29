@@ -16,8 +16,19 @@ module.exports = Merge(CommonConfig, {
     // },
     output: {
         path: path.join(root, 'static/build/dev'),
-        filename: 'main-[hash].js',
+        filename: 'main.js',
         publicPath: '/static/build/dev'
+    },
+    devServer: {
+        contentBase: path.join(root, './static/build/dev'),
+        publicPath: '/static/build/dev/',
+        watchContentBase: true,
+        port: 9001,
+        proxy: {
+        '!(/static/build/**/**.*)': {
+            target: 'http://127.0.0.1:5000'
+        }
+    }
     },
     plugins: [
         // new webpack.HotModuleReplacementPlugin(),

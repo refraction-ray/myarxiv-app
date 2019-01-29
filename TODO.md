@@ -19,10 +19,12 @@
 - [ ] unsubscribe in email
 - [ ] systematically bulk download of previous papers
 - [x] favorite with time feature
+- [ ] webpack and flask: two server in develop
+- [ ] modify docker config considering webpack
 
 ## Future Plan
 
-- [ ] webpack in frontend project
+- [x] webpack in frontend project
 - [x] admin manage system
 - [ ] comments and SNS system
 - [ ] database check and backup
