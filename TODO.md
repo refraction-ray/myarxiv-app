@@ -18,7 +18,7 @@
 - [x] make celery worker run in test
 - [ ] unsubscribe in email
 - [ ] systematically bulk download of previous papers
-- [ ] favorite with time feature
+- [x] favorite with time feature
 
 ## Future Plan
 

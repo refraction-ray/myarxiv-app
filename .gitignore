@@ -18,3 +18,6 @@ tests/dbtest.py
 htmlcov/
 tests/test_test.py
 logs/*.log
+node_modules/
+package-lock.json
+app/static/build

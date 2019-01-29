@@ -3,9 +3,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% if config['ENV']=="development" %}
-    {% include "external-dev.html" %}
+    {% include "extdev.html" %}
 {% else %}
-    {% include "external.html" %}
+    {% include "extprod.html" %}
 {% endif %}
 <script>
     var u = {

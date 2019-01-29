@@ -142,7 +142,7 @@ def api_query():
     pid(list)
     authors(list, full name is required), dates (list, in the form %Y-%m-%d)
     subjects (list), page(int), limit(int, how many items in one page), keywords(list),
-    sortby(str), default with date
+    sortby(str), default with date (to be implemented)
     default_keywords (bool, add keywords of the user in the search list)
     default_subjects (bool), favorites(bool, only include favorite paper of the user)
     for pid, authors, keywords and subjects, comma separated string is also supported
