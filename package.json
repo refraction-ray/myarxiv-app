@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "description": "my personal arxiv viewer",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "jstest": "echo \"Error: no test specified\" && exit 1",
+    "pytest": "pytest tests",
+    "pycheck": "flake8 --ignore E501 app",
     "build": "webpack --config webpack.config/dev.js",
     "deploy": "webpack --progress --config webpack.config/prod.js",
-    "server": "webpack-dev-server --config webpack.config/dev.js --open"
+    "server": "webpack-dev-server --config webpack.config/dev.js --open",
+    "app": "./run.sh",
+    "all": "npm run build && concurrently \"npm run app\" \"npm run server\""
   },
   "repository": {
     "type": "git",
@@ -32,7 +36,10 @@
     "vue-template-compiler": "^2.5.22",
     "webpack": "^4.29.0",
     "webpack-cli": "^3.2.1",
-    "webpack-dev-server": "^3.1.14",
     "webpack-merge": "^4.2.1"
+  },
+  "devDependencies": {
+    "webpack-dev-server": "^3.1.14",
+    "concurrently": "^4.1.0"
   }
 }

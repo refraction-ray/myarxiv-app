@@ -38,7 +38,7 @@ class myModelView(AccessMixIn, ModelView):
 
 
 class userModelView(myModelView):
-    column_exclude_list = ['password','favorites', ]
+    column_exclude_list = ['password', 'favorites', ]
     column_display_all_relations = True
     form_widget_args = {
         'email': {
@@ -65,7 +65,6 @@ class authorModelView(myModelView):
     column_list = ["pid", "author", "authorrank"]
     page_size = 30
     column_searchable_list = ['author', ]
-
 
 
 admin = Admin(index_view=SecuredHomeView(url='/admin'))

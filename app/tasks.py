@@ -56,8 +56,7 @@ def setup_periodic_tasks(sender, **kwargs):
 @celery.task
 def kwmatch_task(sdate, kw):
     ps = Paper.query.filter(Paper.announce == sdate).all()
-    l = Paper.dicts(ps, kw)
-    return l  # list
+    return Paper.dicts(ps, kw)  # list
 
 
 def paper_into_db(ps, backup=True):

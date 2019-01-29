@@ -20,3 +20,4 @@ lxml==4.1.1
 pytest==3.7.0
 coverage==4.5.1
 pytest-cov==2.5.1
+flake8==3.6.0

@@ -17,6 +17,7 @@ from .conf import conf
 from .logs import log_init_app
 from .manage import admin
 
+
 def create_app(blueprints=True, dbcreate=conf.get("DB_CREATE", False), testconf=None):
     print("------------")
     print("entering create_app()")

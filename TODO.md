@@ -19,7 +19,7 @@
 - [ ] unsubscribe in email
 - [ ] systematically bulk download of previous papers
 - [x] favorite with time feature
-- [ ] webpack and flask: two server in develop
+- [x] webpack and flask: two servers in develop
 - [ ] modify docker config considering webpack
 
 ## Future Plan
@@ -31,5 +31,5 @@
 - [ ] verification code
 - [ ] recommendation system
 - [ ] weekly smart report
-- [ ] click CLI toolkit
+- [x] click CLI toolkit (just use npm script system instead)
 - [ ] websocket

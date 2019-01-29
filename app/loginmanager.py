@@ -17,10 +17,12 @@ def login_redirect():
         from .views import login
         return login()
 
+
 login_manager = LoginManager()
 # login_manager.login_view = 'userview.login'
 login_manager.unauthorized_handler(login_redirect)
 login_manager.session_protection = conf['LOGIN_SESSION_PROTECTION']
+
 
 def admin_required(func):
     @wraps(func)
@@ -30,4 +32,5 @@ def admin_required(func):
         if not current_user.is_admin():
             abort(404)
         return func(*args, **kwargs)
+
     return decorated_view
